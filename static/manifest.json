@@ -1,0 +1,25 @@
+{
+  "name": "Ecuaciones Urbanas",
+  "short_name": "Ecuaciones",
+  "description": "Clasificación visual del comercio ambulante mediante fotografía, tipologías urbanas e inteligencia artificial.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f0e8",
+  "theme_color": "#121214",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
