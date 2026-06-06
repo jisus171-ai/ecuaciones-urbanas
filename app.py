@@ -518,21 +518,21 @@ input {
 }
 
 .poster {
-    width: 880px;
-    height: 860px;
+    width: min(340px, 84vw);
+    aspect-ratio: 5 / 7.3;
+    height: auto;
     background: var(--paper);
     color: var(--ink);
-    padding: 34px;
+    padding: 14px;
     display: grid;
-    grid-template-rows: auto 360px auto;
-    align-content: center;
-    gap: 24px;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
     box-shadow: 0 25px 50px rgba(0,0,0,0.45);
 }
 
 .poster-header {
     text-align: center;
-    font-size: 0.72rem;
+    font-size: 0.52rem;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -541,7 +541,8 @@ input {
 
 .canvas-wrap {
     width: 100%;
-    height: 360px;
+    height: 100%;
+    min-height: 0;
     margin: 0 auto;
     position: relative;
     display: flex;
@@ -574,11 +575,11 @@ input {
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .poster-title {
-    font-size: 2.45rem;
+    font-size: 1.18rem;
     font-weight: 700;
     letter-spacing: -0.04em;
     text-transform: lowercase;
@@ -588,23 +589,23 @@ input {
 .equation-box {
     background: var(--paper2);
     border: 1px solid var(--line);
-    padding: 10px 14px;
+    padding: 8px 10px;
     width: 100%;
 }
 
 .equation {
     font-family: "Courier New", "Lucida Console", monospace;
     font-weight: 700;
-    font-size: 1rem;
-    line-height: 1.3;
+    font-size: 0.64rem;
+    line-height: 1.18;
     text-transform: lowercase;
 }
 
 .poster-actions {
-    width: 880px;
+    width: min(340px, 84vw);
     display: flex;
-    gap: 12px;
-    margin-top: 16px;
+    gap: 10px;
+    margin-top: 14px;
     justify-content: center;
     flex-wrap: wrap;
 }
@@ -684,29 +685,28 @@ input {
     }
 
     .poster {
-        width: 94vw;
-        height: 78vh;
-        grid-template-rows: auto 1fr auto;
-    }
-
-    .canvas-wrap {
-        height: auto;
+        width: min(320px, 90vw);
     }
 
     .poster-actions {
-        width: 94vw;
+        width: min(320px, 90vw);
     }
 }
 
 @page {
-    size: letter portrait;
+    size: 5cm 7.3cm;
     margin: 0;
 }
 
 @media print {
+    html,
     body {
+        width: 5cm !important;
+        height: 7.3cm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
         background: white !important;
-        overflow: visible;
     }
 
     .screen:not(#screen-poster),
@@ -720,24 +720,49 @@ input {
     }
 
     #screen-poster {
-        display: block !important;
+        display: flex !important;
+        width: 5cm !important;
+        height: 7.3cm !important;
         background: white !important;
         padding: 0 !important;
+        margin: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
     }
 
     .poster {
-        width: 100vw !important;
-        height: 100vh !important;
+        width: 5cm !important;
+        height: 7.3cm !important;
+        padding: 0.22cm !important;
+        gap: 0.14cm !important;
         box-shadow: none !important;
-        padding: 0.75in 0.7in !important;
         display: grid !important;
-        grid-template-rows: auto 4.6in auto !important;
-        gap: 0.28in !important;
+        grid-template-rows: auto 1fr auto !important;
+        margin: 0 !important;
+    }
+
+    .poster-header {
+        font-size: 6.4pt !important;
     }
 
     .canvas-wrap {
         width: 100% !important;
-        height: 4.6in !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    .poster-title {
+        font-size: 11.5pt !important;
+        line-height: 0.95 !important;
+    }
+
+    .equation-box {
+        padding: 0.10cm !important;
+    }
+
+    .equation {
+        font-size: 5.7pt !important;
+        line-height: 1.15 !important;
     }
 }
 </style>
@@ -878,7 +903,7 @@ input {
         <div class="poster-header">ecuaciones urbanas</div>
 
         <div class="canvas-wrap">
-            <canvas id="poster-canvas" width="1100" height="360"></canvas>
+            <canvas id="poster-canvas" width="900" height="1180"></canvas>
             <div class="placeholder" id="placeholder">captura o sube una fotografía para comenzar</div>
         </div>
 
@@ -970,6 +995,13 @@ const FIXED_DOT_SCALE = 0.32;
 const FIXED_CONTRAST = 62;
 const FIXED_BRIGHTNESS = 2;
 const DUOTONE_STRENGTH = 0.78;
+
+const PRINT_POSTER_WIDTH_CM = 5;
+const PRINT_POSTER_HEIGHT_CM = 7.3;
+const EXPORT_DPI = 300;
+const PX_PER_CM = EXPORT_DPI / 2.54;
+const EXPORT_W = Math.round(PRINT_POSTER_WIDTH_CM * PX_PER_CM);
+const EXPORT_H = Math.round(PRINT_POSTER_HEIGHT_CM * PX_PER_CM);
 
 const TYPE_DISPLAY = {
     "triciclo de tamales": "triciclo de tamales",
@@ -1708,39 +1740,104 @@ btnPrint.addEventListener("click", () => window.print());
 
 btnDownload.addEventListener("click", () => {
     const captureCanvas = document.createElement("canvas");
-    captureCanvas.width = 1700;
-    captureCanvas.height = 2200;
+    captureCanvas.width = EXPORT_W;
+    captureCanvas.height = EXPORT_H;
 
     const ctx = captureCanvas.getContext("2d");
 
+    const W = captureCanvas.width;
+    const H = captureCanvas.height;
+
     ctx.fillStyle = "#f3f0e8";
-    ctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
+    ctx.fillRect(0, 0, W, H);
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
-    ctx.fillStyle = "#222";
-    ctx.font = "bold 26px Helvetica, Arial, sans-serif";
-    ctx.fillText("ECUACIONES URBANAS", 850, 80);
-
-    ctx.drawImage(posterCanvas, 150, 150, 1400, 460);
-
-    ctx.fillStyle = "#111";
-    ctx.font = "bold 72px Helvetica, Arial, sans-serif";
+    const margin = Math.round(W * 0.07);
+    const innerW = W - margin * 2;
 
     const titleTxt = document.getElementById("p-title").textContent;
-    ctx.fillText(titleTxt, 850, 720);
+    const equationTxt = document.getElementById("p-equation").textContent;
+
+    function drawWrappedCenteredText(ctx, text, centerX, startY, maxWidth, lineHeight) {
+        const words = text.split(" ");
+        const lines = [];
+        let line = "";
+
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line ? line + " " + words[n] : words[n];
+            const metrics = ctx.measureText(testLine);
+
+            if (metrics.width > maxWidth && line) {
+                lines.push(line);
+                line = words[n];
+            } else {
+                line = testLine;
+            }
+        }
+
+        if (line) lines.push(line);
+
+        lines.forEach((l, i) => {
+            ctx.fillText(l, centerX, startY + i * lineHeight);
+        });
+
+        return startY + lines.length * lineHeight;
+    }
+
+    ctx.fillStyle = "#222";
+    ctx.font = `700 ${Math.round(W * 0.042)}px Helvetica, Arial, sans-serif`;
+    ctx.fillText("ECUACIONES URBANAS", W / 2, Math.round(H * 0.035));
+
+    const imageY = Math.round(H * 0.085);
+    const imageH = Math.round(H * 0.50);
+
+    ctx.drawImage(
+        posterCanvas,
+        margin,
+        imageY,
+        innerW,
+        imageH
+    );
+
+    ctx.fillStyle = "#111";
+    ctx.font = `700 ${Math.round(W * 0.072)}px Helvetica, Arial, sans-serif`;
+
+    let currentY = imageY + imageH + Math.round(H * 0.04);
+
+    currentY = drawWrappedCenteredText(
+        ctx,
+        titleTxt,
+        W / 2,
+        currentY,
+        innerW,
+        Math.round(W * 0.082)
+    );
+
+    currentY += Math.round(H * 0.02);
+
+    const eqBoxY = currentY;
+    const eqBoxH = Math.round(H * 0.14);
 
     ctx.fillStyle = "#e7e1d4";
-    ctx.fillRect(120, 835, 1460, 96);
+    ctx.fillRect(margin, eqBoxY, innerW, eqBoxH);
 
     ctx.strokeStyle = "#d9d2c4";
     ctx.lineWidth = 1;
-    ctx.strokeRect(120, 835, 1460, 96);
+    ctx.strokeRect(margin, eqBoxY, innerW, eqBoxH);
 
     ctx.fillStyle = "#111";
-    ctx.font = "bold 28px 'Courier New', monospace";
-    ctx.fillText(document.getElementById("p-equation").textContent, 850, 867);
+    ctx.font = `700 ${Math.round(W * 0.032)}px "Courier New", monospace`;
+
+    drawWrappedCenteredText(
+        ctx,
+        equationTxt,
+        W / 2,
+        eqBoxY + Math.round(H * 0.022),
+        innerW - 18,
+        Math.round(W * 0.042)
+    );
 
     const dlLink = document.createElement("a");
     dlLink.download = `ecuacion_${titleTxt.replace(/\s+/g, "_")}.jpg`;
@@ -1750,7 +1847,7 @@ btnDownload.addEventListener("click", () => {
     dlLink.click();
     document.body.removeChild(dlLink);
 
-    showToast("imagen jpg descargada.");
+    showToast("imagen jpg descargada en formato 5 x 7.3 cm.");
 });
 
 function showToast(msg) {
