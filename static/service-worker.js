@@ -1,4 +1,4 @@
-const CACHE_NAME = "ecuaciones-urbanas-v5";
+const CACHE_NAME = "ecuaciones-urbanas-v6";
 
 const STATIC_ASSETS = [
   "/",
