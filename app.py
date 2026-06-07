@@ -177,7 +177,7 @@ input {
 .home-button {
     right: 28px;
     padding: 0 18px;
-    font-size: 0.78rem;
+    font-size: 0.64rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -230,7 +230,7 @@ input {
 .kicker {
     font-size: 0.78rem;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--line);
     margin-bottom: 20px;
@@ -532,7 +532,7 @@ input {
 
 .poster-header {
     text-align: center;
-    font-size: 0.76rem;
+    font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -581,7 +581,7 @@ input {
 
 .poster-title {
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 2.05rem;
+    font-size: 1.62rem;
     font-weight: 700;
     letter-spacing: -0.045em;
     text-transform: lowercase;
@@ -591,7 +591,7 @@ input {
 .equation-box {
     background: var(--paper2);
     border: 1px solid var(--line);
-    padding: 14px 12px;
+    padding: 9px 11px;
     width: 100%;
 }
 
@@ -755,16 +755,16 @@ input {
 
     .poster-title {
         font-family: Helvetica, Arial, sans-serif !important;
-        font-size: 16pt !important;
+        font-size: 14.5pt !important;
         line-height: 0.92 !important;
     }
 
     .equation-box {
-        padding: 0.13cm !important;
+        padding: 0.10cm !important;
     }
 
     .equation {
-        font-size: 6.2pt !important;
+        font-size: 5.8pt !important;
         line-height: 1.15 !important;
     }
 }
@@ -1399,7 +1399,12 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
     let imgData = hiddenCtx.getImageData(0, 0, cols, rows);
     let data = imgData.data;
 
-    const factor = (259 * (FIXED_CONTRAST + 255)) / (255 * (259 - FIXED_CONTRAST));
+    // Filtro final aprobado:
+    // Duotono / pop-art con trama azul sobre fondo crema.
+    // Mantiene la foto reconocible sin volverse rectángulo sólido.
+    const contrast = 22;
+    const brightness = -36;
+    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
 
     for (let i = 0; i < data.length; i += 4) {
         let r = data[i];
@@ -1407,7 +1412,7 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
         let b = data[i + 2];
 
         let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        gray = factor * (gray - 128) + 128 + FIXED_BRIGHTNESS;
+        gray = factor * (gray - 128) + 128 + brightness;
         gray = clamp(gray, 0, 255);
 
         data[i] = gray;
@@ -1421,13 +1426,7 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
     smallCanvas.width = cols;
     smallCanvas.height = rows;
     smallCtx.clearRect(0, 0, cols, rows);
-
-    if (FIXED_SOFTNESS > 0) {
-        smallCtx.filter = `blur(${FIXED_SOFTNESS}px)`;
-    } else {
-        smallCtx.filter = "none";
-    }
-
+    smallCtx.filter = "blur(0.35px)";
     smallCtx.drawImage(hiddenCanvas, 0, 0);
     smallCtx.filter = "none";
 
@@ -1436,13 +1435,15 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
 
     const cellW = targetW / cols;
     const cellH = targetH / rows;
-
-    // Estilo pop art: puntos visibles, blancos limpios y sombras densas.
-    const maxRadius = Math.min(cellW, cellH) * 1.25;
-    const effectiveThreshold = 0.10;
+    const maxRadius = Math.min(cellW, cellH) * 0.74;
+    const effectiveThreshold = 0.055;
 
     targetCtx.save();
     targetCtx.globalCompositeOperation = "source-over";
+
+    // Fondo limpio dentro del rectángulo de imagen.
+    targetCtx.fillStyle = "#f3f0e8";
+    targetCtx.fillRect(targetX, targetY, targetW, targetH);
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
@@ -1450,13 +1451,15 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
             const gray = data[idx] / 255;
             const darkness = 1 - gray;
 
+            // Curva balanceada: suficiente azul en sombras y medios tonos,
+            // pero deja blancos para que la imagen no se tape.
             let value = clamp((darkness - 0.015) / 0.985, 0, 1);
-            value = Math.pow(value, 0.62);
-            value += (stableNoise(x, y) - 0.5) * (FIXED_NOISE * 0.55);
+            value = Math.pow(value, 0.82);
+
+            value += (stableNoise(x, y) - 0.5) * 0.012;
             value = clamp(value, 0, 1);
 
             if (value < effectiveThreshold) continue;
-            if (stableNoise(x + 911, y + 357) > FIXED_DENSITY) continue;
 
             const normalized = clamp(
                 (value - effectiveThreshold) / Math.max(0.001, (1 - effectiveThreshold)),
@@ -1464,8 +1467,8 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
                 1
             );
 
-            const radius = maxRadius * FIXED_DOT_SCALE * (0.92 + normalized * 1.18);
-            if (radius < 0.16) continue;
+            const radius = maxRadius * FIXED_DOT_SCALE * (0.10 + normalized * 0.98);
+            if (radius < 0.045) continue;
 
             const cx = targetX + x * cellW + cellW / 2;
             const cy = targetY + y * cellH + cellH / 2;
@@ -1475,9 +1478,10 @@ function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW,
             targetCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
             targetCtx.fill();
 
-            if (normalized > 0.30) {
+            // Refuerzo solo en sombras fuertes para dar presencia tipo impreso.
+            if (normalized > 0.78) {
                 targetCtx.beginPath();
-                targetCtx.arc(cx, cy, radius * 0.58, 0, Math.PI * 2);
+                targetCtx.arc(cx, cy, radius * 0.34, 0, Math.PI * 2);
                 targetCtx.fill();
             }
         }
@@ -1834,7 +1838,7 @@ btnDownload.addEventListener("click", () => {
     }
 
     ctx.fillStyle = "#111";
-    ctx.font = `700 ${Math.round(W * 0.070)}px Helvetica, Arial, sans-serif`;
+    ctx.font = `700 ${Math.round(W * 0.046)}px Helvetica, Arial, sans-serif`;
     ctx.fillText("ECUACIONES URBANAS", W / 2, Math.round(H * 0.040));
 
     const imageRect = {
@@ -1855,7 +1859,7 @@ btnDownload.addEventListener("click", () => {
     );
 
     ctx.fillStyle = "#111";
-    ctx.font = `700 ${Math.round(W * 0.106)}px Helvetica, Arial, sans-serif`;
+    ctx.font = `700 ${Math.round(W * 0.092)}px Helvetica, Arial, sans-serif`;
 
     let currentY = Math.round(H * 0.700);
 
@@ -1868,12 +1872,12 @@ btnDownload.addEventListener("click", () => {
         Math.round(W * 0.105)
     );
 
-    currentY += Math.round(H * 0.022);
+    currentY += Math.round(H * 0.016);
 
     const eqBoxX = Math.round(W * 0.06);
     const eqBoxY = currentY;
     const eqBoxW = Math.round(W * 0.88);
-    const eqBoxH = Math.round(H * 0.150);
+    const eqBoxH = Math.round(H * 0.108);
 
     ctx.fillStyle = "#e7e1d4";
     ctx.fillRect(eqBoxX, eqBoxY, eqBoxW, eqBoxH);
@@ -1883,9 +1887,9 @@ btnDownload.addEventListener("click", () => {
     ctx.strokeRect(eqBoxX, eqBoxY, eqBoxW, eqBoxH);
 
     ctx.fillStyle = "#111";
-    ctx.font = `700 ${Math.round(W * 0.043)}px "Courier New", monospace`;
+    ctx.font = `700 ${Math.round(W * 0.036)}px "Courier New", monospace`;
 
-    const lineHeight = Math.round(W * 0.057);
+    const lineHeight = Math.round(W * 0.046);
     const words = equationTxt.split(" ");
     const lines = [];
     let line = "";
