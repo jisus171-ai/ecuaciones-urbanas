@@ -518,25 +518,26 @@ input {
 }
 
 .poster {
-    width: min(340px, 84vw);
+    width: min(380px, 88vw);
     aspect-ratio: 5 / 7.3;
     height: auto;
     background: var(--paper);
     color: var(--ink);
-    padding: 14px;
+    padding: 24px 20px 28px;
     display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: 12px;
+    grid-template-rows: auto 45% auto;
+    gap: 22px;
     box-shadow: 0 25px 50px rgba(0,0,0,0.45);
 }
 
 .poster-header {
     text-align: center;
-    font-size: 0.52rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     line-height: 1;
+    font-family: Helvetica, Arial, sans-serif;
 }
 
 .canvas-wrap {
@@ -579,25 +580,26 @@ input {
 }
 
 .poster-title {
-    font-size: 1.18rem;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 2.05rem;
     font-weight: 700;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.045em;
     text-transform: lowercase;
-    line-height: 0.95;
+    line-height: 0.92;
 }
 
 .equation-box {
     background: var(--paper2);
     border: 1px solid var(--line);
-    padding: 8px 10px;
+    padding: 14px 12px;
     width: 100%;
 }
 
 .equation {
     font-family: "Courier New", "Lucida Console", monospace;
     font-weight: 700;
-    font-size: 0.64rem;
-    line-height: 1.18;
+    font-size: 0.78rem;
+    line-height: 1.20;
     text-transform: lowercase;
 }
 
@@ -733,16 +735,16 @@ input {
     .poster {
         width: 5cm !important;
         height: 7.3cm !important;
-        padding: 0.22cm !important;
-        gap: 0.14cm !important;
+        padding: 0.28cm 0.24cm 0.34cm !important;
+        gap: 0.20cm !important;
         box-shadow: none !important;
         display: grid !important;
-        grid-template-rows: auto 1fr auto !important;
+        grid-template-rows: auto 45% auto !important;
         margin: 0 !important;
     }
 
     .poster-header {
-        font-size: 6.4pt !important;
+        font-size: 7.2pt !important;
     }
 
     .canvas-wrap {
@@ -752,16 +754,17 @@ input {
     }
 
     .poster-title {
-        font-size: 11.5pt !important;
-        line-height: 0.95 !important;
+        font-family: Helvetica, Arial, sans-serif !important;
+        font-size: 16pt !important;
+        line-height: 0.92 !important;
     }
 
     .equation-box {
-        padding: 0.10cm !important;
+        padding: 0.13cm !important;
     }
 
     .equation {
-        font-size: 5.7pt !important;
+        font-size: 6.2pt !important;
         line-height: 1.15 !important;
     }
 }
@@ -930,6 +933,7 @@ input {
 </div>
 
 <canvas id="hidden-canvas" style="display:none;"></canvas>
+<canvas id="small-canvas" style="display:none;"></canvas>
 <div class="toast" id="toast">mensaje</div>
 
 <script>
@@ -959,6 +963,8 @@ const posterCanvas = document.getElementById("poster-canvas");
 const posterCtx = posterCanvas.getContext("2d");
 const hiddenCanvas = document.getElementById("hidden-canvas");
 const hiddenCtx = hiddenCanvas.getContext("2d");
+const smallCanvas = document.getElementById("small-canvas");
+const smallCtx = smallCanvas.getContext("2d");
 const placeholder = document.getElementById("placeholder");
 
 const confirmType = document.getElementById("confirm-type");
@@ -990,11 +996,16 @@ let lastElement = "";
 let confidenceLevel = "media";
 let corrected = false;
 
-const FIXED_RESOLUTION = 260;
-const FIXED_DOT_SCALE = 0.32;
-const FIXED_CONTRAST = 62;
-const FIXED_BRIGHTNESS = 2;
-const DUOTONE_STRENGTH = 0.78;
+// Filtro final fijo: Manchas por Sombra
+const FIXED_RESOLUTION = 320;
+const FIXED_DOT_SCALE = 0.83;
+const FIXED_THRESHOLD = 0.29;
+const FIXED_CONTRAST = 10;
+const FIXED_BRIGHTNESS = -66;
+const FIXED_EDGE_STRENGTH = 1.00;
+const FIXED_DENSITY = 0.99;
+const FIXED_NOISE = 0.04;
+const FIXED_SOFTNESS = 0.5;
 
 const PRINT_POSTER_WIDTH_CM = 5;
 const PRINT_POSTER_HEIGHT_CM = 7.3;
@@ -1022,12 +1033,12 @@ const TYPE_EQUATIONS = {
 };
 
 const TYPE_COLORS = {
-    "triciclo de tamales": "#e0aa00",
-    "carrito de papas y botanas": "#f06a00",
-    "carrito de raspados": "#0089e8",
-    "triciclo de pan y café": "#2f9a42",
-    "otro": "#8a52b8",
-    "no identificado": "#766c62"
+    "triciclo de tamales": "#d69b00",
+    "carrito de papas y botanas": "#f05a00",
+    "carrito de raspados": "#007bd8",
+    "triciclo de pan y café": "#218a36",
+    "otro": "#8a22c8",
+    "no identificado": "#665c52"
 };
 
 function showScreen(id, saveHistory = true) {
@@ -1337,6 +1348,144 @@ function hexToRgb(hex) {
     } : { r: 150, g: 150, b: 150 };
 }
 
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function getPixelGray(data, x, y, w, h) {
+    x = clamp(Math.round(x), 0, w - 1);
+    y = clamp(Math.round(y), 0, h - 1);
+
+    const idx = (y * w + x) * 4;
+    return data[idx];
+}
+
+function stableNoise(x, y) {
+    const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    return n - Math.floor(n);
+}
+
+function drawImageCoverToCanvas(ctx, img, targetW, targetH) {
+    const imgRatio = img.width / img.height;
+    const targetRatio = targetW / targetH;
+
+    let sx = 0;
+    let sy = 0;
+    let sw = img.width;
+    let sh = img.height;
+
+    if (imgRatio > targetRatio) {
+        sh = img.height;
+        sw = sh * targetRatio;
+        sx = (img.width - sw) / 2;
+    } else {
+        sw = img.width;
+        sh = sw / targetRatio;
+        sy = (img.height - sh) / 2;
+    }
+
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+}
+
+function renderFilteredPopArt(targetCtx, sourceImage, targetX, targetY, targetW, targetH, color) {
+    const cols = FIXED_RESOLUTION;
+    const rows = Math.max(1, Math.round(cols * (targetH / targetW)));
+
+    hiddenCanvas.width = cols;
+    hiddenCanvas.height = rows;
+    hiddenCtx.clearRect(0, 0, cols, rows);
+    drawImageCoverToCanvas(hiddenCtx, sourceImage, cols, rows);
+
+    let imgData = hiddenCtx.getImageData(0, 0, cols, rows);
+    let data = imgData.data;
+
+    const factor = (259 * (FIXED_CONTRAST + 255)) / (255 * (259 - FIXED_CONTRAST));
+
+    for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+
+        let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        gray = factor * (gray - 128) + 128 + FIXED_BRIGHTNESS;
+        gray = clamp(gray, 0, 255);
+
+        data[i] = gray;
+        data[i + 1] = gray;
+        data[i + 2] = gray;
+        data[i + 3] = 255;
+    }
+
+    hiddenCtx.putImageData(imgData, 0, 0);
+
+    smallCanvas.width = cols;
+    smallCanvas.height = rows;
+    smallCtx.clearRect(0, 0, cols, rows);
+
+    if (FIXED_SOFTNESS > 0) {
+        smallCtx.filter = `blur(${FIXED_SOFTNESS}px)`;
+    } else {
+        smallCtx.filter = "none";
+    }
+
+    smallCtx.drawImage(hiddenCanvas, 0, 0);
+    smallCtx.filter = "none";
+
+    imgData = smallCtx.getImageData(0, 0, cols, rows);
+    data = imgData.data;
+
+    const cellW = targetW / cols;
+    const cellH = targetH / rows;
+
+    // Estilo pop art: puntos visibles, blancos limpios y sombras densas.
+    const maxRadius = Math.min(cellW, cellH) * 1.25;
+    const effectiveThreshold = 0.10;
+
+    targetCtx.save();
+    targetCtx.globalCompositeOperation = "source-over";
+
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const idx = (y * cols + x) * 4;
+            const gray = data[idx] / 255;
+            const darkness = 1 - gray;
+
+            let value = clamp((darkness - 0.015) / 0.985, 0, 1);
+            value = Math.pow(value, 0.62);
+            value += (stableNoise(x, y) - 0.5) * (FIXED_NOISE * 0.55);
+            value = clamp(value, 0, 1);
+
+            if (value < effectiveThreshold) continue;
+            if (stableNoise(x + 911, y + 357) > FIXED_DENSITY) continue;
+
+            const normalized = clamp(
+                (value - effectiveThreshold) / Math.max(0.001, (1 - effectiveThreshold)),
+                0,
+                1
+            );
+
+            const radius = maxRadius * FIXED_DOT_SCALE * (0.92 + normalized * 1.18);
+            if (radius < 0.16) continue;
+
+            const cx = targetX + x * cellW + cellW / 2;
+            const cy = targetY + y * cellH + cellH / 2;
+
+            targetCtx.beginPath();
+            targetCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+            targetCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+            targetCtx.fill();
+
+            if (normalized > 0.30) {
+                targetCtx.beginPath();
+                targetCtx.arc(cx, cy, radius * 0.58, 0, Math.PI * 2);
+                targetCtx.fill();
+            }
+        }
+    }
+
+    targetCtx.restore();
+}
+
 function renderPopArt() {
     if (!loadedImage) return;
 
@@ -1344,123 +1493,21 @@ function renderPopArt() {
     btnPrint.disabled = false;
     btnDownload.disabled = false;
 
+    const category = finalCategory || detectedCategory || "no identificado";
+    const color = hexToRgb(TYPE_COLORS[category] || TYPE_COLORS["no identificado"]);
+
     posterCtx.fillStyle = "#f3f0e8";
     posterCtx.fillRect(0, 0, posterCanvas.width, posterCanvas.height);
 
-    const areaW = posterCanvas.width * 0.92;
-    const areaH = posterCanvas.height * 0.88;
-    const areaX = (posterCanvas.width - areaW) / 2;
-    const areaY = (posterCanvas.height - areaH) / 2;
-
-    const fitLocal = getContainRect(
-        loadedImage.width,
-        loadedImage.height,
-        areaW,
-        areaH
-    );
-
-    const fit = {
-        x: areaX + fitLocal.x,
-        y: areaY + fitLocal.y,
-        w: fitLocal.w,
-        h: fitLocal.h
-    };
-
-    const cols = FIXED_RESOLUTION;
-    const rows = Math.max(1, Math.round(cols * (fit.h / fit.w)));
-
-    hiddenCanvas.width = cols;
-    hiddenCanvas.height = rows;
-    hiddenCtx.clearRect(0, 0, cols, rows);
-
-    hiddenCtx.drawImage(
+    renderFilteredPopArt(
+        posterCtx,
         loadedImage,
         0,
         0,
-        cols,
-        rows
+        posterCanvas.width,
+        posterCanvas.height,
+        color
     );
-
-    const imgData = hiddenCtx.getImageData(0, 0, cols, rows);
-    const data = imgData.data;
-
-    const factor = (259 * (FIXED_CONTRAST + 255)) / (255 * (259 - FIXED_CONTRAST));
-    const palette = getPalette(finalCategory || detectedCategory);
-
-    const lightRGB = hexToRgb(palette.light);
-    const midRGB = hexToRgb(palette.mid);
-    const darkRGB = hexToRgb(palette.dark);
-
-    posterCtx.fillStyle = "#f3f0e8";
-    posterCtx.fillRect(fit.x, fit.y, fit.w, fit.h);
-
-    const cellW = fit.w / cols;
-    const cellH = fit.h / rows;
-
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            const idx = (y * cols + x) * 4;
-
-            let r = data[idx];
-            let g = data[idx + 1];
-            let b = data[idx + 2];
-            const a = data[idx + 3];
-
-            if (a < 10) continue;
-
-            r = factor * (r - 128) + 128 + FIXED_BRIGHTNESS;
-            g = factor * (g - 128) + 128 + FIXED_BRIGHTNESS;
-            b = factor * (b - 128) + 128 + FIXED_BRIGHTNESS;
-
-            r = Math.max(0, Math.min(255, r));
-            g = Math.max(0, Math.min(255, g));
-            b = Math.max(0, Math.min(255, b));
-
-            const lumi = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            const darkness = 1 - lumi;
-
-            if (darkness < 0.018) continue;
-
-            let color;
-
-            if (darkness < 0.42) {
-                const t = darkness / 0.42;
-
-                color = {
-                    r: Math.round(lightRGB.r + (midRGB.r - lightRGB.r) * t),
-                    g: Math.round(lightRGB.g + (midRGB.g - lightRGB.g) * t),
-                    b: Math.round(lightRGB.b + (midRGB.b - lightRGB.b) * t)
-                };
-            } else {
-                const t = (darkness - 0.42) / 0.58;
-
-                color = {
-                    r: Math.round(midRGB.r + (darkRGB.r - midRGB.r) * t),
-                    g: Math.round(midRGB.g + (darkRGB.g - midRGB.g) * t),
-                    b: Math.round(midRGB.b + (darkRGB.b - midRGB.b) * t)
-                };
-            }
-
-            const originalMix = 1 - DUOTONE_STRENGTH;
-
-            const finalR = Math.round(r * originalMix + color.r * DUOTONE_STRENGTH);
-            const finalG = Math.round(g * originalMix + color.g * DUOTONE_STRENGTH);
-            const finalB = Math.round(b * originalMix + color.b * DUOTONE_STRENGTH);
-
-            const cx = fit.x + x * cellW + cellW / 2;
-            const cy = fit.y + y * cellH + cellH / 2;
-
-            const maxRadius = Math.min(cellW, cellH) * 0.52;
-            const radius = maxRadius * Math.pow(darkness, 0.82) * FIXED_DOT_SCALE;
-
-            if (radius < 0.12) continue;
-
-            posterCtx.beginPath();
-            posterCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-            posterCtx.fillStyle = `rgb(${finalR}, ${finalG}, ${finalB})`;
-            posterCtx.fill();
-        }
-    }
 }
 
 async function analyzeCurrentImage() {
@@ -1748,14 +1795,14 @@ btnDownload.addEventListener("click", () => {
     const W = captureCanvas.width;
     const H = captureCanvas.height;
 
+    const category = finalCategory || detectedCategory || "no identificado";
+    const color = hexToRgb(TYPE_COLORS[category] || TYPE_COLORS["no identificado"]);
+
     ctx.fillStyle = "#f3f0e8";
     ctx.fillRect(0, 0, W, H);
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-
-    const margin = Math.round(W * 0.07);
-    const innerW = W - margin * 2;
 
     const titleTxt = document.getElementById("p-title").textContent;
     const equationTxt = document.getElementById("p-equation").textContent;
@@ -1786,58 +1833,81 @@ btnDownload.addEventListener("click", () => {
         return startY + lines.length * lineHeight;
     }
 
-    ctx.fillStyle = "#222";
-    ctx.font = `700 ${Math.round(W * 0.042)}px Helvetica, Arial, sans-serif`;
-    ctx.fillText("ECUACIONES URBANAS", W / 2, Math.round(H * 0.035));
+    ctx.fillStyle = "#111";
+    ctx.font = `700 ${Math.round(W * 0.070)}px Helvetica, Arial, sans-serif`;
+    ctx.fillText("ECUACIONES URBANAS", W / 2, Math.round(H * 0.040));
 
-    const imageY = Math.round(H * 0.085);
-    const imageH = Math.round(H * 0.50);
+    const imageRect = {
+        x: Math.round(W * 0.06),
+        y: Math.round(H * 0.170),
+        w: Math.round(W * 0.88),
+        h: Math.round(H * 0.450)
+    };
 
-    ctx.drawImage(
-        posterCanvas,
-        margin,
-        imageY,
-        innerW,
-        imageH
+    renderFilteredPopArt(
+        ctx,
+        loadedImage,
+        imageRect.x,
+        imageRect.y,
+        imageRect.w,
+        imageRect.h,
+        color
     );
 
     ctx.fillStyle = "#111";
-    ctx.font = `700 ${Math.round(W * 0.072)}px Helvetica, Arial, sans-serif`;
+    ctx.font = `700 ${Math.round(W * 0.106)}px Helvetica, Arial, sans-serif`;
 
-    let currentY = imageY + imageH + Math.round(H * 0.04);
+    let currentY = Math.round(H * 0.700);
 
     currentY = drawWrappedCenteredText(
         ctx,
         titleTxt,
         W / 2,
         currentY,
-        innerW,
-        Math.round(W * 0.082)
+        Math.round(W * 0.90),
+        Math.round(W * 0.105)
     );
 
-    currentY += Math.round(H * 0.02);
+    currentY += Math.round(H * 0.022);
 
+    const eqBoxX = Math.round(W * 0.06);
     const eqBoxY = currentY;
-    const eqBoxH = Math.round(H * 0.14);
+    const eqBoxW = Math.round(W * 0.88);
+    const eqBoxH = Math.round(H * 0.150);
 
     ctx.fillStyle = "#e7e1d4";
-    ctx.fillRect(margin, eqBoxY, innerW, eqBoxH);
+    ctx.fillRect(eqBoxX, eqBoxY, eqBoxW, eqBoxH);
 
     ctx.strokeStyle = "#d9d2c4";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(margin, eqBoxY, innerW, eqBoxH);
+    ctx.lineWidth = Math.max(1, Math.round(W * 0.002));
+    ctx.strokeRect(eqBoxX, eqBoxY, eqBoxW, eqBoxH);
 
     ctx.fillStyle = "#111";
-    ctx.font = `700 ${Math.round(W * 0.032)}px "Courier New", monospace`;
+    ctx.font = `700 ${Math.round(W * 0.043)}px "Courier New", monospace`;
 
-    drawWrappedCenteredText(
-        ctx,
-        equationTxt,
-        W / 2,
-        eqBoxY + Math.round(H * 0.022),
-        innerW - 18,
-        Math.round(W * 0.042)
-    );
+    const lineHeight = Math.round(W * 0.057);
+    const words = equationTxt.split(" ");
+    const lines = [];
+    let line = "";
+
+    for (let n = 0; n < words.length; n++) {
+        const testLine = line ? line + " " + words[n] : words[n];
+
+        if (ctx.measureText(testLine).width > eqBoxW - Math.round(W * 0.08) && line) {
+            lines.push(line);
+            line = words[n];
+        } else {
+            line = testLine;
+        }
+    }
+
+    if (line) lines.push(line);
+
+    const textStartY = eqBoxY + (eqBoxH - lines.length * lineHeight) / 2 + Math.round(W * 0.006);
+
+    lines.forEach((l, i) => {
+        ctx.fillText(l, W / 2, textStartY + i * lineHeight);
+    });
 
     const dlLink = document.createElement("a");
     dlLink.download = `ecuacion_${titleTxt.replace(/\s+/g, "_")}.jpg`;
