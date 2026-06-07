@@ -930,7 +930,6 @@ input {
 </div>
 
 <canvas id="hidden-canvas" style="display:none;"></canvas>
-<canvas id="small-canvas" style="display:none;"></canvas>
 <div class="toast" id="toast">mensaje</div>
 
 <script>
@@ -960,8 +959,6 @@ const posterCanvas = document.getElementById("poster-canvas");
 const posterCtx = posterCanvas.getContext("2d");
 const hiddenCanvas = document.getElementById("hidden-canvas");
 const hiddenCtx = hiddenCanvas.getContext("2d");
-const smallCanvas = document.getElementById("small-canvas");
-const smallCtx = smallCanvas.getContext("2d");
 const placeholder = document.getElementById("placeholder");
 
 const confirmType = document.getElementById("confirm-type");
@@ -993,16 +990,11 @@ let lastElement = "";
 let confidenceLevel = "media";
 let corrected = false;
 
-// Filtro final fijo: Manchas por Sombra
-const FIXED_RESOLUTION = 320;
-const FIXED_DOT_SCALE = 0.83;
-const FIXED_THRESHOLD = 0.29;
-const FIXED_CONTRAST = 10;
-const FIXED_BRIGHTNESS = -66;
-const FIXED_EDGE_STRENGTH = 1.00;
-const FIXED_DENSITY = 0.99;
-const FIXED_NOISE = 0.04;
-const FIXED_SOFTNESS = 0.5;
+const FIXED_RESOLUTION = 260;
+const FIXED_DOT_SCALE = 0.32;
+const FIXED_CONTRAST = 62;
+const FIXED_BRIGHTNESS = 2;
+const DUOTONE_STRENGTH = 0.78;
 
 const PRINT_POSTER_WIDTH_CM = 5;
 const PRINT_POSTER_HEIGHT_CM = 7.3;
@@ -1030,12 +1022,12 @@ const TYPE_EQUATIONS = {
 };
 
 const TYPE_COLORS = {
-    "triciclo de tamales": "#d69b00",
-    "carrito de papas y botanas": "#f05a00",
-    "carrito de raspados": "#007bd8",
-    "triciclo de pan y café": "#218a36",
-    "otro": "#8a22c8",
-    "no identificado": "#665c52"
+    "triciclo de tamales": "#e0aa00",
+    "carrito de papas y botanas": "#f06a00",
+    "carrito de raspados": "#0089e8",
+    "triciclo de pan y café": "#2f9a42",
+    "otro": "#8a52b8",
+    "no identificado": "#766c62"
 };
 
 function showScreen(id, saveHistory = true) {
@@ -1345,32 +1337,12 @@ function hexToRgb(hex) {
     } : { r: 150, g: 150, b: 150 };
 }
 
-function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-}
-
-function getPixelGray(data, x, y, w, h) {
-    x = clamp(Math.round(x), 0, w - 1);
-    y = clamp(Math.round(y), 0, h - 1);
-
-    const idx = (y * w + x) * 4;
-    return data[idx];
-}
-
-function stableNoise(x, y) {
-    const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-    return n - Math.floor(n);
-}
-
 function renderPopArt() {
     if (!loadedImage) return;
 
     placeholder.style.display = "none";
     btnPrint.disabled = false;
     btnDownload.disabled = false;
-
-    const category = finalCategory || detectedCategory || "no identificado";
-    const color = hexToRgb(TYPE_COLORS[category] || TYPE_COLORS["no identificado"]);
 
     posterCtx.fillStyle = "#f3f0e8";
     posterCtx.fillRect(0, 0, posterCanvas.width, posterCanvas.height);
@@ -1400,112 +1372,92 @@ function renderPopArt() {
     hiddenCanvas.width = cols;
     hiddenCanvas.height = rows;
     hiddenCtx.clearRect(0, 0, cols, rows);
-    hiddenCtx.drawImage(loadedImage, 0, 0, cols, rows);
 
-    let imgData = hiddenCtx.getImageData(0, 0, cols, rows);
-    let data = imgData.data;
+    hiddenCtx.drawImage(
+        loadedImage,
+        0,
+        0,
+        cols,
+        rows
+    );
+
+    const imgData = hiddenCtx.getImageData(0, 0, cols, rows);
+    const data = imgData.data;
 
     const factor = (259 * (FIXED_CONTRAST + 255)) / (255 * (259 - FIXED_CONTRAST));
+    const palette = getPalette(finalCategory || detectedCategory);
 
-    // Convertir la imagen a una matriz de grises contrastada.
-    for (let i = 0; i < data.length; i += 4) {
-        let r = data[i];
-        let g = data[i + 1];
-        let b = data[i + 2];
-
-        let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        gray = factor * (gray - 128) + 128 + FIXED_BRIGHTNESS;
-        gray = clamp(gray, 0, 255);
-
-        data[i] = gray;
-        data[i + 1] = gray;
-        data[i + 2] = gray;
-        data[i + 3] = 255;
-    }
-
-    hiddenCtx.putImageData(imgData, 0, 0);
-
-    // Suavizado de manchas antes de convertir a puntos.
-    smallCanvas.width = cols;
-    smallCanvas.height = rows;
-    smallCtx.clearRect(0, 0, cols, rows);
-
-    if (FIXED_SOFTNESS > 0) {
-        smallCtx.filter = `blur(${FIXED_SOFTNESS}px)`;
-    } else {
-        smallCtx.filter = "none";
-    }
-
-    smallCtx.drawImage(hiddenCanvas, 0, 0);
-    smallCtx.filter = "none";
-
-    imgData = smallCtx.getImageData(0, 0, cols, rows);
-    data = imgData.data;
+    const lightRGB = hexToRgb(palette.light);
+    const midRGB = hexToRgb(palette.mid);
+    const darkRGB = hexToRgb(palette.dark);
 
     posterCtx.fillStyle = "#f3f0e8";
     posterCtx.fillRect(fit.x, fit.y, fit.w, fit.h);
 
     const cellW = fit.w / cols;
     const cellH = fit.h / rows;
-    const maxRadius = Math.min(cellW, cellH) * 0.64;
 
-    for (let y = 1; y < rows - 1; y++) {
-        for (let x = 1; x < cols - 1; x++) {
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
             const idx = (y * cols + x) * 4;
-            const gray = data[idx] / 255;
-            const darkness = 1 - gray;
 
-            // Se calcula el contorno, aunque el modo final usa manchas por sombra.
-            // La constante se conserva para mantener compatibilidad con los parámetros elegidos.
-            const gx = (
-                -getPixelGray(data, x - 1, y - 1, cols, rows) +
-                 getPixelGray(data, x + 1, y - 1, cols, rows) +
-                -2 * getPixelGray(data, x - 1, y, cols, rows) +
-                 2 * getPixelGray(data, x + 1, y, cols, rows) +
-                -getPixelGray(data, x - 1, y + 1, cols, rows) +
-                 getPixelGray(data, x + 1, y + 1, cols, rows)
-            ) / 1020;
+            let r = data[idx];
+            let g = data[idx + 1];
+            let b = data[idx + 2];
+            const a = data[idx + 3];
 
-            const gy = (
-                -getPixelGray(data, x - 1, y - 1, cols, rows) +
-                -2 * getPixelGray(data, x, y - 1, cols, rows) +
-                -getPixelGray(data, x + 1, y - 1, cols, rows) +
-                 getPixelGray(data, x - 1, y + 1, cols, rows) +
-                 2 * getPixelGray(data, x, y + 1, cols, rows) +
-                 getPixelGray(data, x + 1, y + 1, cols, rows)
-            ) / 1020;
+            if (a < 10) continue;
 
-            const edge = Math.sqrt(gx * gx + gy * gy);
+            r = factor * (r - 128) + 128 + FIXED_BRIGHTNESS;
+            g = factor * (g - 128) + 128 + FIXED_BRIGHTNESS;
+            b = factor * (b - 128) + 128 + FIXED_BRIGHTNESS;
 
-            // Modo fijo: Manchas por Sombra.
-            // Igual que en el laboratorio aprobado: la mancha nace de la sombra,
-            // sin sumar contorno al valor principal.
-            let value = darkness;
+            r = Math.max(0, Math.min(255, r));
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
 
-            value += (stableNoise(x, y) - 0.5) * FIXED_NOISE;
-            value = clamp(value, 0, 1);
+            const lumi = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            const darkness = 1 - lumi;
 
-            if (value < FIXED_THRESHOLD) continue;
+            if (darkness < 0.018) continue;
 
-            const normalized = clamp(
-                (value - FIXED_THRESHOLD) / Math.max(0.001, (1 - FIXED_THRESHOLD)),
-                0,
-                1
-            );
+            let color;
 
-            if (stableNoise(x + 911, y + 357) > FIXED_DENSITY) continue;
+            if (darkness < 0.42) {
+                const t = darkness / 0.42;
 
-            // Radio más lleno para que la imagen no quede pálida al imprimirse en 5 x 7.3 cm.
-            const radius = maxRadius * FIXED_DOT_SCALE * (0.50 + normalized * 0.95);
+                color = {
+                    r: Math.round(lightRGB.r + (midRGB.r - lightRGB.r) * t),
+                    g: Math.round(lightRGB.g + (midRGB.g - lightRGB.g) * t),
+                    b: Math.round(lightRGB.b + (midRGB.b - lightRGB.b) * t)
+                };
+            } else {
+                const t = (darkness - 0.42) / 0.58;
 
-            if (radius < 0.10) continue;
+                color = {
+                    r: Math.round(midRGB.r + (darkRGB.r - midRGB.r) * t),
+                    g: Math.round(midRGB.g + (darkRGB.g - midRGB.g) * t),
+                    b: Math.round(midRGB.b + (darkRGB.b - midRGB.b) * t)
+                };
+            }
+
+            const originalMix = 1 - DUOTONE_STRENGTH;
+
+            const finalR = Math.round(r * originalMix + color.r * DUOTONE_STRENGTH);
+            const finalG = Math.round(g * originalMix + color.g * DUOTONE_STRENGTH);
+            const finalB = Math.round(b * originalMix + color.b * DUOTONE_STRENGTH);
 
             const cx = fit.x + x * cellW + cellW / 2;
             const cy = fit.y + y * cellH + cellH / 2;
 
+            const maxRadius = Math.min(cellW, cellH) * 0.52;
+            const radius = maxRadius * Math.pow(darkness, 0.82) * FIXED_DOT_SCALE;
+
+            if (radius < 0.12) continue;
+
             posterCtx.beginPath();
             posterCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-            posterCtx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+            posterCtx.fillStyle = `rgb(${finalR}, ${finalG}, ${finalB})`;
             posterCtx.fill();
         }
     }
