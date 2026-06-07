@@ -867,6 +867,11 @@ input {
 
         <p class="confirm-note" id="confirm-note">¿La clasificación es correcta?</p>
 
+        <div class="other-box" id="confirm-other-box">
+            <input class="other-input" id="confirm-other-category-input" type="text" placeholder="escribe qué tipo de puesto es">
+            <textarea class="other-input other-textarea" id="confirm-other-elements-input" placeholder="escribe los elementos que lo componen, por ejemplo: hielera + mesa plegable + vasos"></textarea>
+        </div>
+
         <div class="confirm-buttons">
             <button class="btn btn-primary" id="btn-confirm-generate">sí, generar poster</button>
             <button class="btn" id="btn-correct">corregir clasificación</button>
@@ -893,6 +898,7 @@ input {
 
         <div class="other-box" id="other-category-box">
             <input class="other-input" id="other-category-input" type="text" placeholder="escribe la categoría">
+            <textarea class="other-input other-textarea" id="other-elements-input" placeholder="escribe los elementos que lo componen, por ejemplo: hielera + mesa plegable + vasos"></textarea>
             <button class="btn btn-primary" id="btn-confirm-other">confirmar categoría</button>
         </div>
     </div>
@@ -919,7 +925,6 @@ input {
     </section>
 
     <div class="poster-actions">
-        <button class="btn" id="btn-print" disabled>imprimir póster</button>
         <button class="btn" id="btn-download" disabled>descargar jpg</button>
         <button class="btn" id="btn-new">nuevo registro</button>
     </div>
@@ -978,7 +983,12 @@ const toast = document.getElementById("toast");
 
 const otherCategoryBox = document.getElementById("other-category-box");
 const otherCategoryInput = document.getElementById("other-category-input");
+const otherElementsInput = document.getElementById("other-elements-input");
 const btnConfirmOther = document.getElementById("btn-confirm-other");
+
+const confirmOtherBox = document.getElementById("confirm-other-box");
+const confirmOtherCategoryInput = document.getElementById("confirm-other-category-input");
+const confirmOtherElementsInput = document.getElementById("confirm-other-elements-input");
 
 let screenHistory = [];
 let stream = null;
@@ -990,6 +1000,7 @@ let lastInputMode = "method";
 let detectedCategory = "no identificado";
 let finalCategory = "no identificado";
 let customOtherCategory = "";
+let customOtherElements = "";
 let highlightColorHex = "#766c62";
 let lastEquation = "";
 let lastElement = "";
@@ -1208,8 +1219,25 @@ function handleFiles(files) {
 
 function resetOther() {
     customOtherCategory = "";
-    otherCategoryInput.value = "";
-    otherCategoryBox.style.display = "none";
+    customOtherElements = "";
+
+    if (otherCategoryInput) otherCategoryInput.value = "";
+    if (otherElementsInput) otherElementsInput.value = "";
+    if (otherCategoryBox) otherCategoryBox.style.display = "none";
+
+    if (confirmOtherCategoryInput) confirmOtherCategoryInput.value = "";
+    if (confirmOtherElementsInput) confirmOtherElementsInput.value = "";
+    if (confirmOtherBox) confirmOtherBox.style.display = "none";
+}
+
+function buildOtherEquation(displayType) {
+    const elements = customOtherElements.trim();
+
+    if (elements) {
+        return `${elements} = ${displayType}`;
+    }
+
+    return `elemento de venta + estructura ambulante = ${displayType}`;
 }
 
 function loadImage(src) {
@@ -1263,7 +1291,7 @@ function resetAll() {
 
     btnAnalyzeCamera.disabled = true;
     btnAnalyzeUpload.disabled = true;
-    btnPrint.disabled = true;
+    if (btnPrint) btnPrint.disabled = true;
     btnDownload.disabled = true;
 
     placeholder.style.display = "block";
@@ -1494,7 +1522,7 @@ function renderPopArt() {
     if (!loadedImage) return;
 
     placeholder.style.display = "none";
-    btnPrint.disabled = false;
+    if (btnPrint) btnPrint.disabled = false;
     btnDownload.disabled = false;
 
     const category = finalCategory || detectedCategory || "no identificado";
@@ -1601,10 +1629,14 @@ function updateConfirmScreen() {
 
     confidencePill.textContent = "confianza: " + confidenceLevel;
 
+    if (confirmOtherBox) {
+        confirmOtherBox.style.display = detectedCategory === "otro" ? "block" : "none";
+    }
+
     if (confidenceLevel === "baja" || detectedCategory === "no identificado") {
         confirmNote.textContent = "La clasificación no fue concluyente. Puedes generar el póster o corregir la clasificación manualmente.";
     } else if (detectedCategory === "otro") {
-        confirmNote.textContent = "Se detectó otro tipo de puesto. Puedes escribir la categoría específica antes de generar el póster.";
+        confirmNote.textContent = "Se detectó otro tipo de puesto. Escribe la categoría específica y los elementos que la componen antes de generar el póster.";
     } else {
         confirmNote.textContent = "¿La clasificación es correcta?";
     }
@@ -1626,7 +1658,7 @@ function updatePosterTexts() {
         : (lastEquation || TYPE_EQUATIONS[finalCategory]);
 
     if (finalCategory === "otro" && customOtherCategory.trim()) {
-        equation = `elemento de venta + estructura ambulante = ${displayType}`;
+        equation = buildOtherEquation(displayType);
     }
 
     document.getElementById("p-title").textContent = displayType;
@@ -1659,14 +1691,22 @@ document.querySelectorAll(".correct-option").forEach(btn => {
 
 btnConfirmOther.addEventListener("click", async () => {
     const value = otherCategoryInput.value.trim();
+    const elementsValue = otherElementsInput ? otherElementsInput.value.trim() : "";
 
     if (!value) {
         showToast("escribe una categoría para 'otro'.");
         return;
     }
 
+    if (!elementsValue) {
+        showToast("escribe los elementos que componen esta tipología.");
+        return;
+    }
+
     finalCategory = "otro";
     customOtherCategory = value.toLowerCase();
+    customOtherElements = elementsValue.toLowerCase();
+    lastElement = customOtherElements;
     corrected = true;
     highlightColorHex = TYPE_COLORS["otro"];
 
@@ -1678,10 +1718,25 @@ btnConfirmGenerate.addEventListener("click", async () => {
     corrected = false;
 
     if (finalCategory === "otro") {
-        showScreen("screen-correct");
-        otherCategoryBox.style.display = "block";
-        otherCategoryInput.focus();
-        return;
+        const value = confirmOtherCategoryInput ? confirmOtherCategoryInput.value.trim() : "";
+        const elementsValue = confirmOtherElementsInput ? confirmOtherElementsInput.value.trim() : "";
+
+        if (!value) {
+            showToast("escribe qué tipo de puesto es.");
+            if (confirmOtherCategoryInput) confirmOtherCategoryInput.focus();
+            return;
+        }
+
+        if (!elementsValue) {
+            showToast("escribe los elementos que componen esta tipología.");
+            if (confirmOtherElementsInput) confirmOtherElementsInput.focus();
+            return;
+        }
+
+        customOtherCategory = value.toLowerCase();
+        customOtherElements = elementsValue.toLowerCase();
+        lastElement = customOtherElements;
+        highlightColorHex = TYPE_COLORS["otro"];
     }
 
     await finalizeAndShowPoster();
@@ -1736,7 +1791,7 @@ async function finalizeAndShowPoster() {
         const displayType = getDisplayCategory();
 
         const equationToSave = finalCategory === "otro" && customOtherCategory.trim()
-            ? `elemento de venta + estructura ambulante = ${displayType}`
+            ? buildOtherEquation(displayType)
             : (
                 corrected
                     ? (TYPE_EQUATIONS[finalCategory] || lastEquation)
@@ -1747,10 +1802,11 @@ async function finalizeAndShowPoster() {
             tipologia_detectada: detectedCategory,
             tipologia_final: finalCategory,
             categoria_personalizada: finalCategory === "otro" ? customOtherCategory : "",
+            elementos_personalizados: finalCategory === "otro" ? customOtherElements : "",
             fue_corregida: corrected ? "sí" : "no",
             confianza_ia: confidenceLevel,
             ecuacion_final: equationToSave,
-            elemento_clave: lastElement,
+            elemento_clave: finalCategory === "otro" && customOtherElements ? customOtherElements : lastElement,
             latitud: geo.latitud,
             longitud: geo.longitud,
             precision_metros: geo.precision_metros,
@@ -1786,8 +1842,6 @@ async function finalizeAndShowPoster() {
         loading.style.display = "none";
     }
 }
-
-btnPrint.addEventListener("click", () => window.print());
 
 btnDownload.addEventListener("click", () => {
     const captureCanvas = document.createElement("canvas");
