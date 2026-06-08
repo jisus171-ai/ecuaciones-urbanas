@@ -230,7 +230,7 @@ input {
     min-width: auto;
     padding: 10px 16px;
     font-size: 0.78rem;
-    opacity: 0.68;
+    opacity: 0.72;
     background: transparent;
     border-color: #4b4b55;
     color: #b8bbc3;
@@ -240,6 +240,26 @@ input {
     opacity: 1;
     background: rgba(255,255,255,0.06);
     color: #f3f4f6;
+}
+
+.cover-reset-button {
+    border: 1px solid #4b4b55;
+    background: transparent;
+    color: #b8bbc3;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: lowercase;
+    cursor: pointer;
+    opacity: 0.78;
+}
+
+.cover-reset-button:hover {
+    opacity: 1;
+    color: #f3f4f6;
+    background: rgba(255,255,255,0.06);
 }
 
 
@@ -531,6 +551,47 @@ input {
     line-height: 1.35;
 }
 
+
+#screen-other-details {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+}
+
+.other-details-content {
+    min-height: 100%;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.other-details-content .title-large,
+.other-details-content .kicker {
+    text-align: center;
+    width: 100%;
+}
+
+.other-details-box {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.other-details-box .other-input {
+    text-align: center;
+}
+
+.other-details-box .other-textarea {
+    text-align: center;
+}
+
+.other-details-box .btn {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* PÓSTER */
 
 #screen-poster {
@@ -801,6 +862,7 @@ input {
     <div class="cover-links">
         <a href="/download/qgis_csv">descargar registros</a>
         <a href="/download/dataset_zip">descargar dataset</a>
+        <button class="cover-reset-button btn-reset-all-records" type="button">borrar todos los registros</button>
     </div>
 
     <div>
@@ -808,7 +870,6 @@ input {
         <h1 class="cover-title">ecuaciones urbanas</h1>
         <p class="cover-subtitle">clasificación visual del comercio ambulante</p>
         <button class="btn btn-light" id="btn-start">comenzar</button>
-        <button class="btn btn-cancel-record" id="btn-reset-all-records" style="margin-top:16px;">borrar todos los registros</button>
     </div>
 </section>
 
@@ -903,11 +964,11 @@ input {
     <button class="back-arrow" id="back-other-details">←</button>
     <button class="home-button go-home">inicio</button>
 
-    <div class="center-content">
+    <div class="center-content other-details-content">
         <div class="kicker">completar otra tipología</div>
         <h2 class="title-large">¿qué tipo de puesto es?</h2>
 
-        <div class="other-box" id="other-details-box" style="display:block;">
+        <div class="other-box other-details-box" id="other-details-box" style="display:block;">
             <input class="other-input" id="other-details-category-input" type="text" placeholder="escribe el nombre de la nueva clasificación">
             <textarea class="other-input other-textarea" id="other-details-elements-input" placeholder="escribe los elementos que componen su ecuación, por ejemplo: hielera + mesa plegable + vasos"></textarea>
             <button class="btn btn-primary" id="btn-generate-other-poster">generar póster</button>
@@ -989,7 +1050,7 @@ const uploadPreview = document.getElementById("upload-preview");
 const uploadPreviewImg = document.getElementById("upload-preview-img");
 
 const btnStart = document.getElementById("btn-start");
-const btnResetAllRecords = document.getElementById("btn-reset-all-records");
+const btnResetAllRecords = document.querySelectorAll(".btn-reset-all-records");
 const btnUseCamera = document.getElementById("btn-use-camera");
 const btnUseUpload = document.getElementById("btn-use-upload");
 const btnCamera = document.getElementById("btn-camera");
@@ -1139,8 +1200,8 @@ document.querySelectorAll(".go-home").forEach(btn => {
 
 btnStart.addEventListener("click", () => showScreen("screen-method"));
 
-if (btnResetAllRecords) {
-    btnResetAllRecords.addEventListener("click", async () => {
+btnResetAllRecords.forEach(btn => {
+    btn.addEventListener("click", async () => {
         const ok = window.confirm("¿Borrar todos los registros, capturas y dataset para comenzar desde cero?");
         if (!ok) return;
 
@@ -1168,7 +1229,7 @@ if (btnResetAllRecords) {
             loading.style.display = "none";
         }
     });
-}
+});
 
 
 btnUseCamera.addEventListener("click", async () => {
@@ -1602,7 +1663,6 @@ function renderPopArt() {
     placeholder.style.display = "none";
     if (btnPrint) btnPrint.disabled = false;
     btnDownload.disabled = false;
-    if (btnCancelRecord && lastSavedRecord) btnCancelRecord.disabled = false;
 
     const category = finalCategory || detectedCategory || "no identificado";
     const color = hexToRgb(TYPE_COLORS[category] || TYPE_COLORS["no identificado"]);
@@ -2422,13 +2482,11 @@ def reset_all_records():
     try:
         ensure_csv()
 
-        # Reiniciar CSV con encabezados.
         with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
             csv.writer(f).writerow(CSV_HEADERS)
 
         removed_files = []
 
-        # Borrar capturas.
         if os.path.exists(CAPTURE_DIR):
             for filename in os.listdir(CAPTURE_DIR):
                 filepath = os.path.join(CAPTURE_DIR, filename)
@@ -2436,7 +2494,6 @@ def reset_all_records():
                     os.remove(filepath)
                     removed_files.append(filepath)
 
-        # Borrar imágenes del dataset, manteniendo carpetas.
         if os.path.exists(DATASET_DIR):
             for root, dirs, files in os.walk(DATASET_DIR):
                 for filename in files:
@@ -2444,7 +2501,6 @@ def reset_all_records():
                     os.remove(filepath)
                     removed_files.append(filepath)
 
-        # Borrar ZIP si existe.
         if os.path.exists(DATASET_ZIP):
             os.remove(DATASET_ZIP)
             removed_files.append(DATASET_ZIP)
