@@ -242,27 +242,6 @@ input {
     color: #f3f4f6;
 }
 
-.cover-reset-button {
-    border: 1px solid #4b4b55;
-    background: transparent;
-    color: #b8bbc3;
-    border-radius: 999px;
-    padding: 8px 12px;
-    font: inherit;
-    font-size: 0.76rem;
-    font-weight: 700;
-    text-transform: lowercase;
-    cursor: pointer;
-    opacity: 0.78;
-}
-
-.cover-reset-button:hover {
-    opacity: 1;
-    color: #f3f4f6;
-    background: rgba(255,255,255,0.06);
-}
-
-
 .kicker {
     font-size: 0.78rem;
     font-weight: 700;
@@ -592,6 +571,79 @@ input {
     margin-right: auto;
 }
 
+
+/* Botón discreto para reiniciar registros: mismo estilo que los links, abajo izquierda */
+.cover-reset-button {
+    position: absolute;
+    left: 24px;
+    bottom: 20px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    min-width: auto;
+    color: #6d675f;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 400;
+    text-transform: lowercase;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: 1;
+}
+
+.cover-reset-button:hover {
+    color: #2f2b27;
+    background: transparent;
+    text-decoration: underline;
+}
+
+/* Centrado real de la ventana para completar la tipología "otro" */
+#screen-other-details {
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 48px !important;
+}
+
+#screen-other-details .other-details-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(900px, calc(100vw - 96px));
+    max-width: 900px;
+    min-height: auto !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+#screen-other-details .title-large,
+#screen-other-details .kicker {
+    width: 100%;
+    text-align: center;
+}
+
+#screen-other-details .other-details-box {
+    display: block;
+    margin: 28px auto 0;
+    width: min(500px, 100%);
+    max-width: 500px;
+    text-align: center;
+}
+
+#screen-other-details .other-input,
+#screen-other-details .other-textarea {
+    text-align: center;
+}
+
+#screen-other-details .btn {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* PÓSTER */
 
 #screen-poster {
@@ -862,8 +914,9 @@ input {
     <div class="cover-links">
         <a href="/download/qgis_csv">descargar registros</a>
         <a href="/download/dataset_zip">descargar dataset</a>
-        <button class="cover-reset-button btn-reset-all-records" type="button">borrar todos los registros</button>
     </div>
+
+    <button class="cover-reset-button btn-reset-all-records" type="button">borrar todos los registros</button>
 
     <div>
         <div class="cover-kicker">archivo visual</div>
