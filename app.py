@@ -226,6 +226,22 @@ input {
     background: var(--ink);
     color: var(--paper);
 }
+.btn-cancel-record {
+    min-width: auto;
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    opacity: 0.68;
+    background: transparent;
+    border-color: #4b4b55;
+    color: #b8bbc3;
+}
+
+.btn-cancel-record:hover {
+    opacity: 1;
+    background: rgba(255,255,255,0.06);
+    color: #f3f4f6;
+}
+
 
 .kicker {
     font-size: 0.78rem;
@@ -792,6 +808,7 @@ input {
         <h1 class="cover-title">ecuaciones urbanas</h1>
         <p class="cover-subtitle">clasificación visual del comercio ambulante</p>
         <button class="btn btn-light" id="btn-start">comenzar</button>
+        <button class="btn btn-cancel-record" id="btn-reset-all-records" style="margin-top:16px;">borrar todos los registros</button>
     </div>
 </section>
 
@@ -946,6 +963,7 @@ input {
 
     <div class="poster-actions">
         <button class="btn" id="btn-download" disabled>descargar jpg</button>
+        <button class="btn btn-cancel-record" id="btn-cancel-record" disabled>Cancelar registro</button>
         <button class="btn" id="btn-new">nuevo registro</button>
     </div>
 
@@ -971,6 +989,7 @@ const uploadPreview = document.getElementById("upload-preview");
 const uploadPreviewImg = document.getElementById("upload-preview-img");
 
 const btnStart = document.getElementById("btn-start");
+const btnResetAllRecords = document.getElementById("btn-reset-all-records");
 const btnUseCamera = document.getElementById("btn-use-camera");
 const btnUseUpload = document.getElementById("btn-use-upload");
 const btnCamera = document.getElementById("btn-camera");
@@ -980,6 +999,7 @@ const btnAnalyzeUpload = document.getElementById("btn-analyze-upload");
 const btnSelectFile = document.getElementById("btn-select-file");
 const btnPrint = document.getElementById("btn-print");
 const btnDownload = document.getElementById("btn-download");
+const btnCancelRecord = document.getElementById("btn-cancel-record");
 const btnNew = document.getElementById("btn-new");
 const btnConfirmGenerate = document.getElementById("btn-confirm-generate");
 const btnCorrect = document.getElementById("btn-correct");
@@ -1026,6 +1046,7 @@ let lastEquation = "";
 let lastElement = "";
 let confidenceLevel = "media";
 let corrected = false;
+let lastSavedRecord = null;
 
 // Filtro final fijo: Manchas por Sombra
 const FIXED_RESOLUTION = 320;
@@ -1117,6 +1138,38 @@ document.querySelectorAll(".go-home").forEach(btn => {
 });
 
 btnStart.addEventListener("click", () => showScreen("screen-method"));
+
+if (btnResetAllRecords) {
+    btnResetAllRecords.addEventListener("click", async () => {
+        const ok = window.confirm("¿Borrar todos los registros, capturas y dataset para comenzar desde cero?");
+        if (!ok) return;
+
+        loading.style.display = "flex";
+        loadingMsg.textContent = "borrando registros...";
+
+        try {
+            const response = await fetch("/api/reset_all_records", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data || data.ok === false) {
+                throw new Error(data?.error || "no se pudieron borrar los registros.");
+            }
+
+            showToast("registros borrados. La app empezó desde cero.");
+        } catch (err) {
+            console.error(err);
+            showToast(err.message || "error borrando registros.");
+        } finally {
+            loading.style.display = "none";
+        }
+    });
+}
+
 
 btnUseCamera.addEventListener("click", async () => {
     lastInputMode = "camera";
@@ -1319,6 +1372,8 @@ function resetAll() {
 
     placeholder.style.display = "block";
     posterStatus.textContent = "";
+    lastSavedRecord = null;
+    if (btnCancelRecord) btnCancelRecord.disabled = true;
 
     posterCtx.fillStyle = "#f3f0e8";
     posterCtx.fillRect(0, 0, posterCanvas.width, posterCanvas.height);
@@ -1547,6 +1602,7 @@ function renderPopArt() {
     placeholder.style.display = "none";
     if (btnPrint) btnPrint.disabled = false;
     btnDownload.disabled = false;
+    if (btnCancelRecord && lastSavedRecord) btnCancelRecord.disabled = false;
 
     const category = finalCategory || detectedCategory || "no identificado";
     const color = hexToRgb(TYPE_COLORS[category] || TYPE_COLORS["no identificado"]);
@@ -1884,6 +1940,15 @@ async function finalizeAndShowPoster() {
             throw new Error(data?.error || "no se pudo guardar el registro final.");
         }
 
+        lastSavedRecord = {
+            imagen_captura: data.imagen_captura || "",
+            imagen_dataset: data.imagen_dataset || ""
+        };
+
+        if (btnCancelRecord) {
+            btnCancelRecord.disabled = false;
+        }
+
         if (data.imagen_dataset) {
             posterStatus.textContent = geo.latitud && geo.longitud
                 ? "imagen y ubicación guardadas"
@@ -1899,6 +1964,45 @@ async function finalizeAndShowPoster() {
     } finally {
         loading.style.display = "none";
     }
+}
+
+if (btnCancelRecord) {
+    btnCancelRecord.addEventListener("click", async () => {
+        if (!lastSavedRecord || (!lastSavedRecord.imagen_captura && !lastSavedRecord.imagen_dataset)) {
+            showToast("no hay registro para cancelar.");
+            return;
+        }
+
+        const ok = window.confirm("¿Cancelar este registro? Se eliminará del CSV y del dataset.");
+        if (!ok) return;
+
+        loading.style.display = "flex";
+        loadingMsg.textContent = "cancelando registro...";
+
+        try {
+            const response = await fetch("/api/cancel_record", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(lastSavedRecord)
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data || data.ok === false) {
+                throw new Error(data?.error || "no se pudo cancelar el registro.");
+            }
+
+            lastSavedRecord = null;
+            btnCancelRecord.disabled = true;
+            posterStatus.textContent = "registro cancelado";
+            showToast("registro cancelado.");
+        } catch (err) {
+            console.error(err);
+            showToast(err.message || "error cancelando el registro.");
+        } finally {
+            loading.style.display = "none";
+        }
+    });
 }
 
 btnDownload.addEventListener("click", () => {
@@ -2251,6 +2355,108 @@ def save_record():
 
     except Exception as e:
         return jsonify({"ok": False, "error": f"error guardando registro: {str(e)}"}), 500
+
+
+@app.route("/api/cancel_record", methods=["POST"])
+def cancel_record():
+    try:
+        ensure_csv()
+        data = request.json or {}
+
+        imagen_captura = data.get("imagen_captura", "")
+        imagen_dataset = data.get("imagen_dataset", "")
+
+        if not imagen_captura and not imagen_dataset:
+            return jsonify({"ok": False, "error": "no hay registro para cancelar."}), 400
+
+        removed_csv = False
+
+        if os.path.exists(CSV_FILE):
+            with open(CSV_FILE, "r", newline="", encoding="utf-8") as f:
+                rows = list(csv.reader(f))
+
+            if rows:
+                header = rows[0]
+                body = rows[1:]
+                new_body = []
+                removed_once = False
+
+                for row in body:
+                    row_capture = row[12] if len(row) > 12 else ""
+                    row_dataset = row[13] if len(row) > 13 else ""
+
+                    match_capture = imagen_captura and row_capture == imagen_captura
+                    match_dataset = imagen_dataset and row_dataset == imagen_dataset
+
+                    if not removed_once and (match_capture or match_dataset):
+                        removed_once = True
+                        removed_csv = True
+                        continue
+
+                    new_body.append(row)
+
+                with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(header)
+                    writer.writerows(new_body)
+
+        removed_files = []
+
+        for filepath in [imagen_captura, imagen_dataset]:
+            if filepath and os.path.exists(filepath):
+                os.remove(filepath)
+                removed_files.append(filepath)
+
+        return jsonify({
+            "ok": True,
+            "removed_csv": removed_csv,
+            "removed_files": removed_files
+        })
+
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"error cancelando registro: {str(e)}"}), 500
+
+
+@app.route("/api/reset_all_records", methods=["POST"])
+def reset_all_records():
+    try:
+        ensure_csv()
+
+        # Reiniciar CSV con encabezados.
+        with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(CSV_HEADERS)
+
+        removed_files = []
+
+        # Borrar capturas.
+        if os.path.exists(CAPTURE_DIR):
+            for filename in os.listdir(CAPTURE_DIR):
+                filepath = os.path.join(CAPTURE_DIR, filename)
+                if os.path.isfile(filepath):
+                    os.remove(filepath)
+                    removed_files.append(filepath)
+
+        # Borrar imágenes del dataset, manteniendo carpetas.
+        if os.path.exists(DATASET_DIR):
+            for root, dirs, files in os.walk(DATASET_DIR):
+                for filename in files:
+                    filepath = os.path.join(root, filename)
+                    os.remove(filepath)
+                    removed_files.append(filepath)
+
+        # Borrar ZIP si existe.
+        if os.path.exists(DATASET_ZIP):
+            os.remove(DATASET_ZIP)
+            removed_files.append(DATASET_ZIP)
+
+        return jsonify({
+            "ok": True,
+            "message": "registros reiniciados",
+            "removed_files": removed_files
+        })
+
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"error reiniciando registros: {str(e)}"}), 500
 
 
 @app.route("/download/qgis_csv")
