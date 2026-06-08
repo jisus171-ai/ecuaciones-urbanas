@@ -507,6 +507,14 @@ input {
     text-transform: lowercase;
 }
 
+.other-textarea {
+    min-height: 92px;
+    resize: vertical;
+    border-radius: 18px;
+    font-family: Helvetica, Arial, sans-serif;
+    line-height: 1.35;
+}
+
 /* PÓSTER */
 
 #screen-poster {
@@ -867,14 +875,25 @@ input {
 
         <p class="confirm-note" id="confirm-note">¿La clasificación es correcta?</p>
 
-        <div class="other-box" id="confirm-other-box">
-            <input class="other-input" id="confirm-other-category-input" type="text" placeholder="escribe qué tipo de puesto es">
-            <textarea class="other-input other-textarea" id="confirm-other-elements-input" placeholder="escribe los elementos que lo componen, por ejemplo: hielera + mesa plegable + vasos"></textarea>
-        </div>
-
         <div class="confirm-buttons">
             <button class="btn btn-primary" id="btn-confirm-generate">sí, generar poster</button>
             <button class="btn" id="btn-correct">corregir clasificación</button>
+        </div>
+    </div>
+</section>
+
+<section id="screen-other-details" class="screen">
+    <button class="back-arrow" id="back-other-details">←</button>
+    <button class="home-button go-home">inicio</button>
+
+    <div class="center-content">
+        <div class="kicker">completar otra tipología</div>
+        <h2 class="title-large">¿qué tipo de puesto es?</h2>
+
+        <div class="other-box" id="other-details-box" style="display:block;">
+            <input class="other-input" id="other-details-category-input" type="text" placeholder="escribe el nombre de la nueva clasificación">
+            <textarea class="other-input other-textarea" id="other-details-elements-input" placeholder="escribe los elementos que componen su ecuación, por ejemplo: hielera + mesa plegable + vasos"></textarea>
+            <button class="btn btn-primary" id="btn-generate-other-poster">generar póster</button>
         </div>
     </div>
 </section>
@@ -897,6 +916,7 @@ input {
         </div>
 
         <div class="other-box" id="other-category-box">
+            <div class="kicker">completa la tipología</div>
             <input class="other-input" id="other-category-input" type="text" placeholder="escribe la categoría">
             <textarea class="other-input other-textarea" id="other-elements-input" placeholder="escribe los elementos que lo componen, por ejemplo: hielera + mesa plegable + vasos"></textarea>
             <button class="btn btn-primary" id="btn-confirm-other">confirmar categoría</button>
@@ -986,9 +1006,9 @@ const otherCategoryInput = document.getElementById("other-category-input");
 const otherElementsInput = document.getElementById("other-elements-input");
 const btnConfirmOther = document.getElementById("btn-confirm-other");
 
-const confirmOtherBox = document.getElementById("confirm-other-box");
-const confirmOtherCategoryInput = document.getElementById("confirm-other-category-input");
-const confirmOtherElementsInput = document.getElementById("confirm-other-elements-input");
+const otherDetailsCategoryInput = document.getElementById("other-details-category-input");
+const otherDetailsElementsInput = document.getElementById("other-details-elements-input");
+const btnGenerateOtherPoster = document.getElementById("btn-generate-other-poster");
 
 let screenHistory = [];
 let stream = null;
@@ -1089,6 +1109,7 @@ document.getElementById("back-camera").addEventListener("click", () => {
 document.getElementById("back-upload").addEventListener("click", goBack);
 document.getElementById("back-confirm").addEventListener("click", goBack);
 document.getElementById("back-correct").addEventListener("click", goBack);
+document.getElementById("back-other-details").addEventListener("click", goBack);
 document.getElementById("back-poster").addEventListener("click", goBack);
 
 document.querySelectorAll(".go-home").forEach(btn => {
@@ -1225,9 +1246,11 @@ function resetOther() {
     if (otherElementsInput) otherElementsInput.value = "";
     if (otherCategoryBox) otherCategoryBox.style.display = "none";
 
-    if (confirmOtherCategoryInput) confirmOtherCategoryInput.value = "";
-    if (confirmOtherElementsInput) confirmOtherElementsInput.value = "";
-    if (confirmOtherBox) confirmOtherBox.style.display = "none";
+    if (otherDetailsCategoryInput) otherDetailsCategoryInput.value = "";
+    if (otherDetailsElementsInput) otherDetailsElementsInput.value = "";
+
+    if (btnConfirmGenerate) btnConfirmGenerate.textContent = "sí, generar póster";
+    if (btnCorrect) btnCorrect.textContent = "corregir clasificación";
 }
 
 function buildOtherEquation(displayType) {
@@ -1542,6 +1565,19 @@ function renderPopArt() {
     );
 }
 
+function normalizeCategory(value) {
+    const raw = String(value || "no identificado").trim().toLowerCase();
+
+    if (raw.includes("tamales")) return "triciclo de tamales";
+    if (raw.includes("papas") || raw.includes("botanas") || raw.includes("chicharr")) return "carrito de papas y botanas";
+    if (raw.includes("raspado")) return "carrito de raspados";
+    if (raw.includes("pan") || raw.includes("café") || raw.includes("cafe")) return "triciclo de pan y café";
+    if (raw.includes("otro")) return "otro";
+    if (raw.includes("no identificado") || raw.includes("sin identificar") || raw.includes("ambigu")) return "no identificado";
+
+    return TYPE_DISPLAY[raw] ? raw : "no identificado";
+}
+
 async function analyzeCurrentImage() {
     if (!loadedImage) {
         showToast("primero carga o captura una imagen.");
@@ -1594,7 +1630,7 @@ async function analyzeCurrentImage() {
             throw new Error(data.error);
         }
 
-        detectedCategory = (data.puesto_type || "no identificado").toLowerCase();
+        detectedCategory = normalizeCategory(data.puesto_type || "no identificado");
         finalCategory = detectedCategory;
         customOtherCategory = "";
         highlightColorHex = data.highlight_color_hex || TYPE_COLORS[detectedCategory] || "#766c62";
@@ -1629,14 +1665,20 @@ function updateConfirmScreen() {
 
     confidencePill.textContent = "confianza: " + confidenceLevel;
 
-    if (confirmOtherBox) {
-        confirmOtherBox.style.display = detectedCategory === "otro" ? "block" : "none";
+    const isOther = detectedCategory === "otro";
+
+    if (btnConfirmGenerate) {
+        btnConfirmGenerate.textContent = isOther ? "confirmar" : "sí, generar póster";
+    }
+
+    if (btnCorrect) {
+        btnCorrect.textContent = isOther ? "reclasificar" : "corregir clasificación";
     }
 
     if (confidenceLevel === "baja" || detectedCategory === "no identificado") {
         confirmNote.textContent = "La clasificación no fue concluyente. Puedes generar el póster o corregir la clasificación manualmente.";
-    } else if (detectedCategory === "otro") {
-        confirmNote.textContent = "Se detectó otro tipo de puesto. Escribe la categoría específica y los elementos que la componen antes de generar el póster.";
+    } else if (isOther) {
+        confirmNote.textContent = "Se detectó la tipología “otro”. Puedes confirmar para completar la nueva clasificación o reclasificar manualmente.";
     } else {
         confirmNote.textContent = "¿La clasificación es correcta?";
     }
@@ -1718,29 +1760,45 @@ btnConfirmGenerate.addEventListener("click", async () => {
     corrected = false;
 
     if (finalCategory === "otro") {
-        const value = confirmOtherCategoryInput ? confirmOtherCategoryInput.value.trim() : "";
-        const elementsValue = confirmOtherElementsInput ? confirmOtherElementsInput.value.trim() : "";
+        showScreen("screen-other-details");
 
-        if (!value) {
-            showToast("escribe qué tipo de puesto es.");
-            if (confirmOtherCategoryInput) confirmOtherCategoryInput.focus();
-            return;
-        }
+        setTimeout(() => {
+            if (otherDetailsCategoryInput) otherDetailsCategoryInput.focus();
+        }, 120);
 
-        if (!elementsValue) {
-            showToast("escribe los elementos que componen esta tipología.");
-            if (confirmOtherElementsInput) confirmOtherElementsInput.focus();
-            return;
-        }
-
-        customOtherCategory = value.toLowerCase();
-        customOtherElements = elementsValue.toLowerCase();
-        lastElement = customOtherElements;
-        highlightColorHex = TYPE_COLORS["otro"];
+        return;
     }
 
     await finalizeAndShowPoster();
 });
+
+if (btnGenerateOtherPoster) {
+    btnGenerateOtherPoster.addEventListener("click", async () => {
+        const value = otherDetailsCategoryInput ? otherDetailsCategoryInput.value.trim() : "";
+        const elementsValue = otherDetailsElementsInput ? otherDetailsElementsInput.value.trim() : "";
+
+        if (!value) {
+            showToast("escribe el nombre de la nueva clasificación.");
+            if (otherDetailsCategoryInput) otherDetailsCategoryInput.focus();
+            return;
+        }
+
+        if (!elementsValue) {
+            showToast("escribe los elementos que componen su ecuación.");
+            if (otherDetailsElementsInput) otherDetailsElementsInput.focus();
+            return;
+        }
+
+        finalCategory = "otro";
+        customOtherCategory = value.toLowerCase();
+        customOtherElements = elementsValue.toLowerCase();
+        lastElement = customOtherElements;
+        corrected = false;
+        highlightColorHex = TYPE_COLORS["otro"];
+
+        await finalizeAndShowPoster();
+    });
+}
 
 function getLocationPromise() {
     return new Promise(resolve => {
