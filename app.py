@@ -314,6 +314,37 @@ input {
     text-decoration: none;
 }
 
+.cover-links-left {
+    position: absolute;
+    left: 24px;
+    bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.cover-reset-link {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    color: #6d675f;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1;
+    text-transform: lowercase;
+    text-decoration: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.cover-reset-link:hover {
+    color: #2f2b27;
+    text-decoration: underline;
+    background: transparent;
+}
+
 .cover-kicker {
     font-size: 0.82rem;
     font-weight: 700;
@@ -531,110 +562,15 @@ input {
 }
 
 
-#screen-other-details {
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
-}
-
-.other-details-content {
-    min-height: 100%;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    margin: 0 auto;
-}
-
-.other-details-content .title-large,
-.other-details-content .kicker {
-    text-align: center;
-    width: 100%;
-}
-
-.other-details-box {
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-}
-
-.other-details-box .other-input {
-    text-align: center;
-}
-
-.other-details-box .other-textarea {
-    text-align: center;
-}
-
-.other-details-box .btn {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-
 /* Botón discreto para reiniciar registros: mismo estilo que los links, abajo izquierda */
-.cover-reset-button {
-    position: absolute;
-    left: 24px;
-    bottom: 20px;
-    border: none;
-    background: transparent;
-    padding: 0;
-    min-width: auto;
-    color: #6d675f;
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 0.78rem;
-    font-weight: 400;
-    text-transform: lowercase;
-    text-decoration: none;
-    cursor: pointer;
-    opacity: 1;
-}
-
-.cover-reset-button:hover {
-    color: #2f2b27;
-    background: transparent;
-    text-decoration: underline;
-}
-
 /* Centrado real de la ventana para completar la tipología "otro" */
-#screen-other-details {
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 48px !important;
-}
-
-#screen-other-details .other-details-content {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(900px, calc(100vw - 96px));
-    max-width: 900px;
-    min-height: auto !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-#screen-other-details .title-large,
+#screen-other-details #screen-other-details .title-large,
 #screen-other-details .kicker {
     width: 100%;
     text-align: center;
 }
 
-#screen-other-details .other-details-box {
-    display: block;
-    margin: 28px auto 0;
-    width: min(500px, 100%);
-    max-width: 500px;
-    text-align: center;
-}
-
-#screen-other-details .other-input,
+#screen-other-details #screen-other-details .other-input,
 #screen-other-details .other-textarea {
     text-align: center;
 }
@@ -642,6 +578,56 @@ input {
 #screen-other-details .btn {
     margin-left: auto;
     margin-right: auto;
+}
+
+
+#screen-other-details {
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 48px !important;
+    min-height: 100vh;
+}
+
+#screen-other-details.active {
+    display: flex !important;
+}
+
+#screen-other-details .other-details-content {
+    width: min(900px, calc(100vw - 96px));
+    max-width: 900px;
+    min-height: auto !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    transform: translateY(-2vh);
+}
+
+#screen-other-details .kicker,
+#screen-other-details .title-large {
+    width: 100%;
+    text-align: center !important;
+}
+
+#screen-other-details .other-details-box {
+    display: block !important;
+    width: min(500px, 100%);
+    max-width: 500px;
+    margin: 32px auto 0 !important;
+    text-align: center !important;
+}
+
+#screen-other-details .other-input,
+#screen-other-details .other-textarea {
+    text-align: center !important;
+}
+
+#screen-other-details .btn {
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
 /* PÓSTER */
@@ -916,9 +902,10 @@ input {
         <a href="/download/dataset_zip">descargar dataset</a>
     </div>
 
-    <button class="cover-reset-button btn-reset-all-records" type="button">borrar todos los registros</button>
-
-    <div>
+    <div class="cover-links-left">
+        <button class="cover-reset-link btn-reset-all-records" type="button">borrar todos los registros</button>
+    </div>
+<div>
         <div class="cover-kicker">archivo visual</div>
         <h1 class="cover-title">ecuaciones urbanas</h1>
         <p class="cover-subtitle">clasificación visual del comercio ambulante</p>
