@@ -926,7 +926,7 @@ input {
 <div>
         <div class="cover-kicker">archivo visual</div>
         <h1 class="cover-title">ecuaciones urbanas</h1>
-        <p class="cover-subtitle">clasificación visual del comercio ambulante · 14 tipologías activas</p>
+        <p class="cover-subtitle">clasificación visual del comercio ambulante</p>
         <button class="btn btn-light" id="btn-start">comenzar</button>
     </div>
 </section>
@@ -938,7 +938,7 @@ input {
     <div class="center-content">
         <div class="kicker">paso 01</div>
         <h2 class="title-large">¿cómo quieres registrar el puesto?</h2>
-        <p class="subtitle">Puedes tomar una fotografía directamente con la cámara o subir una imagen existente. Esta versión reconoce 14 tipologías ampliadas.</p>
+        <p class="subtitle">Puedes tomar una fotografía directamente con la cámara o subir una imagen existente</p>
 
         <div class="method-buttons">
             <button class="btn btn-primary" id="btn-use-camera">usar cámara</button>
