@@ -17,12 +17,20 @@ DATASET_DIR = "dataset_ecuaciones_urbanas"
 DATASET_ZIP = "dataset_ecuaciones_urbanas.zip"
 
 CLASS_FOLDERS = {
-    "triciclo de tamales": "tamales",
-    "carrito de papas y botanas": "papas_botanas",
-    "carrito de raspados": "raspados",
-    "triciclo de pan y café": "pan_cafe",
+    "agua / garrafones": "agua_garrafones",
+    "papas y chicharrones": "papas_chicharrones",
+    "raspados": "raspados",
+    "cocos": "cocos",
+    "mangos": "mangos",
+    "nieves y helados": "nieves_helados",
+    "cocteles de fruta": "cocteles_fruta",
+    "tamales": "tamales",
+    "pan y café": "pan_cafe",
+    "algodón de azúcar": "algodon_azucar",
+    "antojitos mexicanos": "antojitos_mexicanos",
+    "aguas frescas": "aguas_frescas",
     "otro": "otro",
-    "no identificado": "no_identificado"
+    "no identificado": "no_identificado",
 }
 
 CSV_HEADERS = [
@@ -1025,10 +1033,18 @@ input {
         <h2 class="title-large">¿cuál es la tipología correcta?</h2>
 
         <div class="correct-grid">
-            <button class="btn btn-primary correct-option" data-type="triciclo de tamales">tamales</button>
-            <button class="btn correct-option" data-type="carrito de papas y botanas">papas / botanas / chicharrones</button>
-            <button class="btn correct-option" data-type="carrito de raspados">raspados</button>
-            <button class="btn correct-option" data-type="triciclo de pan y café">pan / café</button>
+            <button class="btn btn-primary correct-option" data-type="agua / garrafones">agua / garrafones</button>
+            <button class="btn correct-option" data-type="papas y chicharrones">papas / chicharrones</button>
+            <button class="btn correct-option" data-type="raspados">raspados</button>
+            <button class="btn correct-option" data-type="cocos">cocos</button>
+            <button class="btn correct-option" data-type="mangos">mangos</button>
+            <button class="btn correct-option" data-type="nieves y helados">nieves / helados</button>
+            <button class="btn correct-option" data-type="cocteles de fruta">cocteles de fruta</button>
+            <button class="btn correct-option" data-type="tamales">tamales</button>
+            <button class="btn correct-option" data-type="pan y café">pan / café</button>
+            <button class="btn correct-option" data-type="algodón de azúcar">algodón de azúcar</button>
+            <button class="btn correct-option" data-type="antojitos mexicanos">antojitos mexicanos</button>
+            <button class="btn correct-option" data-type="aguas frescas">aguas frescas</button>
             <button class="btn correct-option" data-type="otro">otro</button>
             <button class="btn correct-option" data-type="no identificado">no identificado</button>
         </div>
@@ -1168,30 +1184,54 @@ const EXPORT_W = Math.round(PRINT_POSTER_WIDTH_CM * PX_PER_CM);
 const EXPORT_H = Math.round(PRINT_POSTER_HEIGHT_CM * PX_PER_CM);
 
 const TYPE_DISPLAY = {
-    "triciclo de tamales": "triciclo de tamales",
-    "carrito de papas y botanas": "carrito de papas y botanas",
-    "carrito de raspados": "carrito de raspados",
-    "triciclo de pan y café": "triciclo de pan y café",
+    "agua / garrafones": "puesto de agua",
+    "papas y chicharrones": "papas y chicharrones",
+    "raspados": "carrito de raspados",
+    "cocos": "puesto de cocos",
+    "mangos": "puesto de mangos",
+    "nieves y helados": "nieves y helados",
+    "cocteles de fruta": "cocteles de fruta",
+    "tamales": "triciclo de tamales",
+    "pan y café": "pan y café",
+    "algodón de azúcar": "algodón de azúcar",
+    "antojitos mexicanos": "antojitos mexicanos",
+    "aguas frescas": "aguas frescas",
     "otro": "otro",
-    "no identificado": "no identificado"
+    "no identificado": "no identificado",
 };
 
 const TYPE_EQUATIONS = {
-    "triciclo de tamales": "vaporera de metal + triciclo de carga = triciclo de tamales",
-    "carrito de papas y botanas": "bolsas de frituras + chicharrones dorados = carrito de papas y botanas",
-    "carrito de raspados": "jarabes de colores + hielo = carrito de raspados",
-    "triciclo de pan y café": "canasto de pan + termo de café = triciclo de pan y café",
-    "otro": "elemento de venta + estructura ambulante = otro",
-    "no identificado": "imagen ambigua + información insuficiente = no identificado"
+    "agua / garrafones": "triciclo + garrafones de agua = puesto de agua",
+    "papas y chicharrones": "papas + chicharrones + salsas = puesto de papas y chicharrones",
+    "raspados": "botellas de jarabe + hielo = carrito de raspados",
+    "cocos": "cocos + estructura de venta = puesto de cocos",
+    "mangos": "mangos + chile + limón = puesto de mangos",
+    "nieves y helados": "vitrina fría + conos = puesto de nieves y helados",
+    "cocteles de fruta": "fruta picada + vasos = puesto de cocteles de fruta",
+    "tamales": "vaporera metálica + triciclo = triciclo de tamales",
+    "pan y café": "canasto de pan + termo de café = puesto de pan y café",
+    "algodón de azúcar": "bolsas de algodón + varillas = puesto de algodón de azúcar",
+    "antojitos mexicanos": "comal + tortillas + salsas = puesto de antojitos mexicanos",
+    "aguas frescas": "vitroleros + vasos = puesto de aguas frescas",
+    "otro": "elementos particulares + estructura de venta = otra tipología",
+    "no identificado": "imagen ambigua + información insuficiente = no identificado",
 };
 
 const TYPE_COLORS = {
-    "triciclo de tamales": "#d69b00",
-    "carrito de papas y botanas": "#f05a00",
-    "carrito de raspados": "#007bd8",
-    "triciclo de pan y café": "#218a36",
+    "agua / garrafones": "#00a3e0",
+    "papas y chicharrones": "#f05a00",
+    "raspados": "#007bd8",
+    "cocos": "#1d8f5a",
+    "mangos": "#f4a300",
+    "nieves y helados": "#8a65d9",
+    "cocteles de fruta": "#e95a5a",
+    "tamales": "#d69b00",
+    "pan y café": "#218a36",
+    "algodón de azúcar": "#e97acf",
+    "antojitos mexicanos": "#d9534f",
+    "aguas frescas": "#34b7a7",
     "otro": "#8a22c8",
-    "no identificado": "#665c52"
+    "no identificado": "#665c52",
 };
 
 function showScreen(id, saveHistory = true) {
@@ -1722,16 +1762,67 @@ function renderPopArt() {
 }
 
 function normalizeCategory(value) {
-    const raw = String(value || "no identificado").trim().toLowerCase();
+    const raw = String(value || "no identificado").trim().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    if (raw.includes("tamales")) return "triciclo de tamales";
-    if (raw.includes("papas") || raw.includes("botanas") || raw.includes("chicharr")) return "carrito de papas y botanas";
-    if (raw.includes("raspado")) return "carrito de raspados";
-    if (raw.includes("pan") || raw.includes("café") || raw.includes("cafe")) return "triciclo de pan y café";
-    if (raw.includes("otro")) return "otro";
-    if (raw.includes("no identificado") || raw.includes("sin identificar") || raw.includes("ambigu")) return "no identificado";
+    if (raw.includes("garrafon") || raw.includes("garrafones") || raw.includes("puesto de agua") || raw.includes("agua / garrafones")) {
+        return "agua / garrafones";
+    }
 
-    return TYPE_DISPLAY[raw] ? raw : "no identificado";
+    if (raw.includes("papas") || raw.includes("botanas") || raw.includes("chicharr")) {
+        return "papas y chicharrones";
+    }
+
+    if (raw.includes("raspado")) {
+        return "raspados";
+    }
+
+    if (raw.includes("coco")) {
+        return "cocos";
+    }
+
+    if (raw.includes("mango")) {
+        return "mangos";
+    }
+
+    if (raw.includes("nieve") || raw.includes("helado") || raw.includes("paleta")) {
+        return "nieves y helados";
+    }
+
+    if (raw.includes("coctel") || raw.includes("cocteles") || raw.includes("fruta picada")) {
+        return "cocteles de fruta";
+    }
+
+    if (raw.includes("tamal")) {
+        return "tamales";
+    }
+
+    if (raw.includes("pan") || raw.includes("cafe")) {
+        return "pan y café";
+    }
+
+    if (raw.includes("algodon")) {
+        return "algodón de azúcar";
+    }
+
+    if (raw.includes("antojito") || raw.includes("comal") || raw.includes("tortilla")) {
+        return "antojitos mexicanos";
+    }
+
+    if (raw.includes("aguas frescas") || raw.includes("agua fresca") || raw.includes("vitrolero")) {
+        return "aguas frescas";
+    }
+
+    if (raw.includes("otro")) {
+        return "otro";
+    }
+
+    if (raw.includes("no identificado") || raw.includes("sin identificar") || raw.includes("ambigu")) {
+        return "no identificado";
+    }
+
+    const original = String(value || "no identificado").trim().toLowerCase();
+    return TYPE_DISPLAY[original] ? original : "no identificado";
 }
 
 async function analyzeCurrentImage() {
@@ -1804,7 +1895,11 @@ async function analyzeCurrentImage() {
         showScreen("screen-confirm");
     } catch (err) {
         console.error(err);
-        showToast(err.message || "error analizando con el servidor.");
+        showToast("no se pudo analizar automáticamente. puedes reclasificar manualmente.");
+        detectedCategory = "no identificado";
+        finalCategory = "no identificado";
+        confidenceLevel = "baja";
+        showScreen("screen-correct");
     } finally {
         loading.style.display = "none";
     }
@@ -2306,40 +2401,73 @@ def analyze():
         gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
         system_prompt = """
-eres un antropólogo urbano y curador de arte contemporáneo con un ojo clínico para la cultura popular mexicana e hispanoamericana.
+eres un antropólogo urbano y curador de arte contemporáneo con un ojo clínico para la cultura popular mexicana.
 
 estás catalogando el comercio ambulante bajo el proyecto "ecuaciones urbanas".
 
-clasifica la imagen en una de estas 6 categorías:
+clasifica la imagen en una de estas 14 categorías exactas. debes elegir únicamente una:
 
-1. "triciclo de tamales":
-- elemento clave: vaporera metálica, olla de aluminio, manta, vapor, triciclo de carga.
-- si aparece una olla grande metálica, cilindro metálico, vaporera o bote de aluminio asociado a venta ambulante, clasifica como "triciclo de tamales".
+1. "agua / garrafones":
+- identificador principal: triciclo o estructura móvil con varios garrafones de agua.
+- no confundir con "aguas frescas": aquí se ven garrafones de agua simple, no vitroleros ni aguas preparadas.
 
-2. "carrito de papas y botanas":
-- elemento clave: papas fritas, chicharrones, botanas, frituras, churritos, ruedas, bolsas grandes transparentes con frituras, bolsas voluminosas de botanas, costales transparentes, vitrinas, salsas y carrito de venta.
-- pon especial atención a botanas dentro de bolsas grandes: aunque las papas o chicharrones no estén sueltos, si se observan frituras doradas, bolsas transparentes grandes con botanas, chicharrones inflados, papas amarillas, churritos naranjas o empaques voluminosos, clasifica como "carrito de papas y botanas".
+2. "papas y chicharrones":
+- identificador principal: bolsas de papas, frituras, chicharrones, botanas, churritos, salsas o recipientes de acompañamientos.
 
-3. "carrito de raspados":
-- elemento clave: botellas de jarabe, hielo, bloque de hielo, texto de raspados, cepillo para hielo, vasos, sabores de colores.
+3. "raspados":
+- identificador principal: botellas de jarabe de colores, hielo, bloque de hielo, cepillo o máquina para raspar hielo, vasos.
+- no confundir con "nieves y helados": los raspados dependen del hielo raspado y jarabes líquidos.
 
-4. "triciclo de pan y café":
-- elemento clave: canasto de pan, pan dulce, conchas, bolsa de pan, termo de café, triciclo.
+4. "cocos":
+- identificador principal: presencia visible de cocos enteros, abiertos o apilados.
 
-5. "otro":
-- usa esta categoría cuando sí se observa un puesto ambulante o semifijo de comida, pero no pertenece a tamales, papas/botanas, raspados ni pan/café.
-- ejemplos: tacos, tortas, elotes, esquites, dulces, aguas frescas, cocos, comida preparada, hot dogs, hamburguesas, fruta, jugos u otro comercio alimentario.
+5. "mangos":
+- identificador principal: mangos preparados, mangos con chile, limón, palitos o vasos con mango.
 
-6. "no identificado":
-- usa esta categoría cuando la imagen no permite identificar con claridad un puesto.
-- ejemplos: imagen borrosa, oscura, demasiado cercana, sin elementos de venta claros, objeto tapado o fotografía accidental.
+6. "nieves y helados":
+- identificador principal: vitrina fría, congelador, botes de nieve, conos, paletas, helados o contenedores fríos.
+
+7. "cocteles de fruta":
+- identificador principal: fruta picada servida en vasos o recipientes transparentes.
+- no confundir con "mangos": aquí debe haber variedad de frutas, no solo mango.
+
+8. "tamales":
+- identificador principal: vaporera metálica, olla grande, bote de aluminio, vapor, triciclo o estructura de venta de tamales.
+
+9. "pan y café":
+- identificador principal: canasto de pan, charolas de pan, pan dulce, termo de café, vasos o triciclo de pan.
+
+10. "algodón de azúcar":
+- identificador principal: bolsas de algodón de azúcar, varillas, colores pastel o máquina de algodón.
+
+11. "antojitos mexicanos":
+- identificador principal: comal, plancha, tortillas, salsas, anafre, guisados o comida mexicana preparada.
+
+12. "aguas frescas":
+- identificador principal: vitroleros, recipientes grandes con aguas de sabor, vasos o aguas de colores.
+- no confundir con "agua / garrafones": aquí son aguas preparadas, no garrafones de agua simple.
+
+13. "otro":
+- usa esta categoría cuando sí se observa un puesto ambulante o semifijo de comida o bebida, pero no pertenece claramente a ninguna categoría anterior.
+
+14. "no identificado":
+- usa esta categoría cuando la imagen es borrosa, oscura, incompleta, demasiado cercana, accidental o no permite identificar el puesto.
+
+reglas importantes:
+- si hay varios garrafones de agua, prioriza "agua / garrafones".
+- si hay cocos visibles, prioriza "cocos".
+- si hay vitroleros o aguas de colores, prioriza "aguas frescas".
+- si hay jarabes de colores para hielo, prioriza "raspados".
+- si hay congelador, conos, paletas o botes de helado, prioriza "nieves y helados".
+- si la clasificación depende demasiado de texto ilegible o de un cartel borroso, baja la confianza.
+- no inventes elementos que no se ven.
 
 responde únicamente con json válido, sin markdown, sin explicación y sin texto extra.
 todos los textos deben estar en minúsculas.
 
 estructura obligatoria:
 {
-  "puesto_type": "triciclo de tamales | carrito de papas y botanas | carrito de raspados | triciclo de pan y café | otro | no identificado",
+  "puesto_type": "agua / garrafones | papas y chicharrones | raspados | cocos | mangos | nieves y helados | cocteles de fruta | tamales | pan y café | algodón de azúcar | antojitos mexicanos | aguas frescas | otro | no identificado",
   "urban_equation": "elemento principal + elemento secundario = tipo de puesto",
   "key_elements": ["elemento 1", "elemento 2", "elemento 3"],
   "highlight_color_hex": "#hexadecimal",
