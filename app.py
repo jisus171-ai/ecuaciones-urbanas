@@ -297,6 +297,16 @@ input {
     width: 100%;
 }
 
+
+.correct-grid {
+    max-width: 920px;
+}
+
+.correct-grid .btn {
+    min-width: 170px;
+    font-size: 0.86rem;
+}
+
 /* PORTADA */
 
 #screen-cover {
@@ -916,7 +926,7 @@ input {
 <div>
         <div class="cover-kicker">archivo visual</div>
         <h1 class="cover-title">ecuaciones urbanas</h1>
-        <p class="cover-subtitle">clasificación visual del comercio ambulante</p>
+        <p class="cover-subtitle">clasificación visual del comercio ambulante · 14 tipologías activas</p>
         <button class="btn btn-light" id="btn-start">comenzar</button>
     </div>
 </section>
@@ -928,7 +938,7 @@ input {
     <div class="center-content">
         <div class="kicker">paso 01</div>
         <h2 class="title-large">¿cómo quieres registrar el puesto?</h2>
-        <p class="subtitle">Puedes tomar una fotografía directamente con la cámara o subir una imagen existente desde tu dispositivo.</p>
+        <p class="subtitle">Puedes tomar una fotografía directamente con la cámara o subir una imagen existente. Esta versión reconoce 14 tipologías ampliadas.</p>
 
         <div class="method-buttons">
             <button class="btn btn-primary" id="btn-use-camera">usar cámara</button>
@@ -1226,7 +1236,7 @@ const TYPE_COLORS = {
     "nieves y helados": "#8a65d9",
     "cocteles de fruta": "#e95a5a",
     "tamales": "#d69b00",
-    "pan y café": "#218a36",
+    "pan y café": "#6B3F24",
     "algodón de azúcar": "#e97acf",
     "antojitos mexicanos": "#d9534f",
     "aguas frescas": "#34b7a7",
@@ -1793,11 +1803,11 @@ function normalizeCategory(value) {
         return "cocteles de fruta";
     }
 
-    if (raw.includes("tamal")) {
+    if (raw.includes("tamal") || raw.includes("triciclo de tamales")) {
         return "tamales";
     }
 
-    if (raw.includes("pan") || raw.includes("cafe")) {
+    if (raw.includes("pan") || raw.includes("cafe") || raw.includes("triciclo de pan")) {
         return "pan y café";
     }
 
@@ -2405,7 +2415,7 @@ eres un antropólogo urbano y curador de arte contemporáneo con un ojo clínico
 
 estás catalogando el comercio ambulante bajo el proyecto "ecuaciones urbanas".
 
-clasifica la imagen en una de estas 14 categorías exactas. debes elegir únicamente una:
+clasifica la imagen en una de estas 14 categorías exactas. debes elegir únicamente una. no uses nombres antiguos como "carrito de papas y botanas", "triciclo de pan y café" o "triciclo de tamales" en puesto_type:
 
 1. "agua / garrafones":
 - identificador principal: triciclo o estructura móvil con varios garrafones de agua.
