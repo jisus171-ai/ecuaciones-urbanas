@@ -1383,8 +1383,6 @@ btnCapture.addEventListener("click", () => {
     tempCanvas.height = video.videoHeight;
 
     const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.translate(tempCanvas.width, 0);
-    tempCtx.scale(-1, 1);
     tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
 
     const dataUrl = tempCanvas.toDataURL("image/jpeg", 0.92);
