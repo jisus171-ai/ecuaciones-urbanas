@@ -434,7 +434,7 @@ input {
 }
 
 #video {
-    transform: scaleX(-1);
+    transform: none;
 }
 
 #captured-preview-container {
